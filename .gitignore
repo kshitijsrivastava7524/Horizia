@@ -1,0 +1,5 @@
+# Ignore raster and large data files
+*.tif
+*.zip
+*.hdf
+*.tiff
