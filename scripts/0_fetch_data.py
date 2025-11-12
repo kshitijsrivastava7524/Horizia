@@ -1,27 +1,28 @@
-# scripts/fetch_data.py
+#library importing
 import ee
-import os
 
-# === Configuration ===
-AOI = [88.05, 27.68, 88.15, 27.75]  # South Lhonak area (Sikkim)
+# Deciding the area of interest
+AOI = [87.9, 27.6, 88.6, 28.2]  # decide
 GEE_FOLDER = 'GEE_Exports'
-os.makedirs('data/raw', exist_ok=True)
 
-# === Authenticate and initialise Earth Engine ===
+#Authenticate and initialise Earth Engine
 try:
-    ee.Initialize(project='ace-connection-447103-v6')  # ← your project ID
+    ee.Initialize(project='ace-connection-447103-v6')
 except Exception:
     ee.Authenticate()
     ee.Initialize(project='ace-connection-447103-v6')
 
-# === Define area of interest ===
-aoi = ee.Geometry.Rectangle(AOI)
+# Define area of interest
+aoi = ee.Geometry.Polygon([
+    [[87.9, 27.6], [88.6, 27.6], [88.6, 28.2], [87.9, 28.2], [87.9, 27.6]]
+]) # go
+
 
 # Sentinel-2 (optical)
 s2 = (
     ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
     .filterBounds(aoi)
-    .filterDate('2023-06-01', '2024-12-31')
+    .filterDate('2024-02-01', '2025-09-30')
     .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 40))
     .median()
     .select(['B2', 'B3', 'B4', 'B8'])
@@ -31,7 +32,7 @@ s2 = (
 s1 = (
     ee.ImageCollection('COPERNICUS/S1_GRD')
     .filterBounds(aoi)
-    .filterDate('2023-06-01', '2024-12-31')
+    .filterDate('2024-02-01', '2025-09-30')
     .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))
     .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VH'))
     .filter(ee.Filter.eq('instrumentMode', 'IW'))
@@ -39,19 +40,19 @@ s1 = (
     .select(['VV', 'VH'])
 )
 
-# DEM (SRTM)
+# DEM
 dem = ee.Image('USGS/SRTMGL1_003').clip(aoi).select('elevation')
 
-# === Harmonize datatypes ===
+# Harmonize datatypes
 s2 = s2.toFloat()
 s1 = s1.toFloat()
 dem = dem.toFloat()
 
-# === Stack bands (all float32) ===
+# Stack bands (all float32)
 stack = s2.addBands(s1).addBands(dem)
 
 
-# === Export to Google Drive ===
+# Export to Google Drive
 task = ee.batch.Export.image.toDrive(
     image=stack,
     description='horizia_stack_export',
@@ -63,4 +64,4 @@ task = ee.batch.Export.image.toDrive(
 )
 task.start()
 
-print('🚀 Export started — check Google Drive →', GEE_FOLDER)
+print('Export started — check Google Drive →', GEE_FOLDER)
