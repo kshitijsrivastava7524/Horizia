@@ -14,6 +14,10 @@ PROB_PATH = "../data/output/predicted_lake_prob.tif"      # Model probability ou
 BIN_PATH  = "../data/output/predicted_lake_binary.tif"    # Binary mask
 AOI_NAME  = "Himalayan Glacial Lakes"
 STATIC_ONLY = False  # Set to True if you don't want interactive Leafmap view
+
+# --- New settings for saving plots ---
+OUTPUT_DIR = "../data/output/"
+EXPORT_DPI = 300
 # ------------------------------
 
 # ---------- Verify existence ----------
@@ -39,7 +43,52 @@ with rasterio.open(BIN_PATH) as src:
 lake_pixels = np.sum(binary)
 print(f"Loaded Sentinel RGB: {rgb.shape}, Prob range: {prob.min():.3f}-{prob.max():.3f}, Lake pixels: {lake_pixels:,}")
 
-# ---------- Static visualization ----------
+# -----------------------------------------------------------------
+# NEW: Save individual plots as separate 300 DPI PNG files
+# -----------------------------------------------------------------
+print(f"Saving individual plots to {OUTPUT_DIR} at {EXPORT_DPI} DPI...")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# --- Plot 1: Sentinel-2 RGB ---
+# Create a new figure and axis for this specific plot
+fig_rgb, ax_rgb = plt.subplots(figsize=(10, 10))
+ax_rgb.set_title("Sentinel-2 RGB")
+ax_rgb.imshow(rgb)
+ax_rgb.axis('off')
+
+# Define the output path
+rgb_path = os.path.join(OUTPUT_DIR, "visualization_rgb.png")
+# Save the figure using settings from your example
+plt.savefig(rgb_path, dpi=EXPORT_DPI, bbox_inches='tight', pad_inches=0)
+plt.close(fig_rgb)  # Close the figure to free memory
+print(f"Saved: {rgb_path}")
+
+# --- Plot 2: Predicted Lake Probability ---
+fig_prob, ax_prob = plt.subplots(figsize=(10, 10))
+ax_prob.set_title("Predicted Lake Probability")
+ax_prob.imshow(prob, cmap='Blues', vmin=0, vmax=1)
+ax_prob.axis('off')
+prob_path = os.path.join(OUTPUT_DIR, "visualization_probability.png")
+plt.savefig(prob_path, dpi=EXPORT_DPI, bbox_inches='tight', pad_inches=0)
+plt.close(fig_prob)
+print(f"Saved: {prob_path}")
+
+# --- Plot 3: Predicted Binary Mask Overlay ---
+fig_overlay, ax_overlay = plt.subplots(figsize=(10, 10))
+ax_overlay.set_title("Predicted Binary Mask Overlay")
+ax_overlay.imshow(rgb)
+ax_overlay.imshow(binary, cmap=ListedColormap(['none', 'cyan']), alpha=0.5)
+ax_overlay.axis('off')
+overlay_path = os.path.join(OUTPUT_DIR, "visualization_overlay.png")
+plt.savefig(overlay_path, dpi=EXPORT_DPI, bbox_inches='tight', pad_inches=0)
+plt.close(fig_overlay)
+print(f"Saved: {overlay_path}")
+print("--- Individual plot saving complete ---")
+
+# -----------------------------------------------------------------
+# ORIGINAL: Static visualization (shows the 1x3 combined plot)
+# -----------------------------------------------------------------
+# This block is unchanged and will still display the combined plot
 plt.figure(figsize=(10, 10))
 plt.subplot(1, 3, 1)
 plt.title("Sentinel-2 RGB")
@@ -61,6 +110,7 @@ plt.tight_layout()
 plt.show()
 
 # ---------- Interactive map ----------
+# This block is unchanged
 if not STATIC_ONLY:
     print("Launching interactive Leafmap window...")
     m = leafmap.Map(
