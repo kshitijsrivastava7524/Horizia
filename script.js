@@ -1,416 +1,460 @@
-// !!! IMPORTANT !!! The API Key you provided is kept here.
-const API_KEY = "a9e47096638b684adcbbf9078735d0c0";
 
-// FIX: Corrected Base URL for standard OpenWeatherMap API endpoints
+// OpenWeatherMap API Constants
+// const API_KEY = "a9e47096638b684adcbbf9078735d0c0"; // Using the key provided by the user
 const API_BASE_URL = "https://api.openweathermap.org/data/2.5/";
+const GEO_API_URL = "https://api.openweathermap.org/geo/1.0/direct";
 
-const messageArea = document.getElementById("message-area");
-const rootElement = document.documentElement; // For dynamic background change
-
-// Modal elements
-const locationModal = document.getElementById("location-modal");
-const openMapModalButton = document.getElementById("open-map-modal");
-const closeModalButton = document.getElementById("close-modal");
-const modalCityInput = document.getElementById("modal-city-input");
-const modalFetchButton = document.getElementById("modal-fetch-button");
-const mainSearchButton = document.getElementById("main-search-button");
-
-// NEW ELEMENT: Current Location Button
-const currentLocationButton = document.getElementById(
-  "current-location-button"
-);
-
-let activeTab = "current";
-
-// Storage for fetched data
-let weatherData = {
-  current: null,
-  forecast: null,
-  name: "N/A",
-  country: "N/A",
+// Helper function to convert UNIX timestamp to a formatted time string
+const formatTime = (timestamp, timezoneOffset) => {
+    if (!timestamp) return 'N/A';
+    const date = new Date((timestamp + timezoneOffset) * 1000);
+    return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'UTC' // Important: treat the timestamp as UTC and let the offset handle the actual time
+    });
 };
 
-// --- Utility Functions ---
+// Helper function to convert UNIX timestamp to a day name
+const formatDay = (timestamp, timezoneOffset) => {
+    if (!timestamp) return 'N/A';
+    const date = new Date((timestamp + timezoneOffset) * 1000);
+    return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        timeZone: 'UTC'
+    });
+};
 
-function showMessage(message, isError = false) {
-  // Note: messageArea element is not defined in the HTML body, so we use console.log as fallback
-  const msgBox = document.createElement("div");
-  msgBox.className = `fixed top-4 right-4 p-3 text-sm rounded-lg ${
-    isError ? "bg-red-700" : "bg-green-700"
-  } text-white z-[60]`;
-  msgBox.textContent = message;
-  document.body.appendChild(msgBox);
-  setTimeout(() => msgBox.remove(), 5000);
-  console.log(isError ? "ERROR:" : "INFO:", message);
-}
 
-function clearMessage() {
-  // No longer needed as messages auto-remove
-}
+// =======================================================
+// CHART LOGIC
+// =======================================================
 
-function toCelsius(kelvin) {
-  // OpenWeatherMap returns temperature in Kelvin by default
-  return (kelvin - 273.15).toFixed(0); // Round to whole number for cleaner UI
-}
 
-function getDayName(timestamp) {
-  const date = new Date(timestamp * 1000);
-  return date.toLocaleDateString("en-US", { weekday: "short" });
-}
+document.addEventListener('DOMContentLoaded', function () {
+    const canvas = document.getElementById('chartCanvas');
+    const ctx = canvas.getContext('2d');
 
-// Dynamic Background Swapping and ACCENT COLOR UPDATER
-function updateBackground(conditionId) {
-  let bgUrl = "";
-  let accentColor = "#f97316"; // Default: Orange (for Clear Sky)
+    // Data points adjusted to fit the 40-100 range
+    const data = [
+        { index: 1, value: 45 },
+        { index: 2, value: 55 },
+        { index: 3, value: 65 }, // Point at cyan threshold
+        { index: 4, value: 80 }, // Point at red danger line
+        { index: 5, value: 75 },
+        { index: 6, value: 90 },
+        { index: 7, value: 98 }
+    ];
 
-  // Weather condition ID ranges (OpenWeatherMap)
-  if (conditionId >= 200 && conditionId < 300) {
-    // Thunderstorm
-    bgUrl = "images/storm.jpeg";
-    accentColor = "#4a2c00"; // Dark Brown
-  } else if (conditionId >= 300 && conditionId < 600) {
-    // Drizzle/Rain
-    bgUrl = "images/rain.jpeg";
-    accentColor = "#3b82f6"; // Deep Blue
-  } else if (conditionId >= 600 && conditionId < 700) {
-    // Snow
-    bgUrl = "images/snow.jpeg";
-    accentColor = "#bfdbfe"; // Icy Light Blue
-  } else if (conditionId === 800) {
-    // Clear
-    bgUrl = "images/clear.jpeg";
-    accentColor = "#f97316"; // Orange
-  } else if (conditionId > 800) {
-    // Clouds (any ID above 800 but not 800 itself)
-    bgUrl = "images/cloudy.jpeg";
-    accentColor = "#d1d5db"; // Light Gray
-  } else {
-    // Atmosphere (700-799: Mist, Smoke, Haze, Fog, Sand, Dust, Ash, Squall, Tornado)
-    bgUrl = "images/misty.jpeg";
-    accentColor = "#84a98c"; // Muted Sea Green / Sage
-  }
+    // Define the fixed display range and threshold values
+    const MIN_DISPLAY_VALUE = 40;
+    const MAX_DISPLAY_VALUE = 100;
+    const CYAN_THRESHOLD = 65;
+    const RED_DANGER_LINE = 80;
+    const PRIMARY_LINE_COLOR = '#00E676';
+    const CYAN_THRESHOLD_COLOR = '#00FFFF';
+    const DANGER_COLOR = '#EF4444';
 
-  document.body.style.backgroundImage = `url('${bgUrl}')`;
-  // FIX: Set the dynamic accent color CSS variable
-  document.documentElement.style.setProperty(
-    "--dynamic-accent-color",
-    accentColor
-  );
-}
+    // Helper function to get the Y-coordinate on the canvas for a given value
+    function getYCoordinate(value, chartHeight, padding) {
+        const range = MAX_DISPLAY_VALUE - MIN_DISPLAY_VALUE;
+        if (range === 0) return padding + chartHeight / 2; // Avoid division by zero
 
-// Helper for API calls with exponential backoff for robustness
-async function fetchWithBackoff(url, retries = 3) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        const errorBody = await response.text();
-        // Append error body to the message if available
-        let message = "Unknown error.";
-        try {
-          const jsonError = JSON.parse(errorBody);
-          message = jsonError.message || message;
-        } catch (e) {
-          message = errorBody || message;
+        // Scale value to chart height: (value - min) / range
+        const normalizedValue = (value - MIN_DISPLAY_VALUE) / range;
+        // Invert Y-axis (high values are low Y coordinates)
+        return canvas.height - padding - (chartHeight * normalizedValue);
+    }
+
+    // Function to draw the entire chart
+    function drawChart() {
+
+        // Set canvas size based on parent container
+        const container = canvas.parentElement;
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+
+        const padding = 20;
+        const chartWidth = canvas.width - 2 * padding;
+        const chartHeight = canvas.height - 2 * padding;
+
+        // Clear the canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // --- 1. Draw Grid Lines ---
+        ctx.strokeStyle = '#333333';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+
+        // Horizontal grid lines (excluding thresholds)
+        for (let i = 0; i < 5; i++) {
+            // This uses the *visual* space, not value scaling, but we'll adapt.
+            // We draw the standard grid lines evenly spaced for structure.
+            const y = padding + chartHeight * (i / 4);
+            if (i > 0 && i < 4) { // Draw middle lines
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(canvas.width - padding, y);
+                ctx.stroke();
+            }
         }
-        const errorMessage = `HTTP error! Status: ${response.status}. ${message}`;
-        throw new Error(errorMessage);
-      }
-      return response.json();
-    } catch (error) {
-      if (i === retries - 1) {
-        throw error;
-      }
-      const delay = Math.pow(2, i) * 1000;
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
-  }
-}
 
-// --- Rendering Functions ---
-
-function renderUI() {
-  const data = weatherData.current;
-  const forecast = weatherData.forecast;
-
-  if (!data || !forecast) return;
-
-  // 1. Update Current Weather Details
-  const tempC = toCelsius(data.main.temp);
-  const tempMaxC = toCelsius(data.main.temp_max);
-  const tempMinC = toCelsius(data.main.temp_min);
-  const description = data.weather[0].description.replace(/\b\w/g, (l) =>
-    l.toUpperCase()
-  );
-  const conditionId = data.weather[0].id;
-  const dateOptions = { weekday: "long", month: "long", day: "numeric" };
-
-  // Handle location display: use stored name/country, or try to reverse geocode if only coordinates were provided
-  let locationName = weatherData.name;
-  if (locationName === "N/A" && data.coord) {
-    // If we have coordinates but no name (from direct lat/lon search), use the reverse geocoding to display the location
-    locationName = `[${data.coord.lat.toFixed(
-      2
-    )}, ${data.coord.lon.toFixed(2)}]`;
-  }
-
-  const locationString = `${locationName}, ${
-    weatherData.country
-  } (${new Date().toLocaleDateString("en-US", dateOptions)})`;
-
-  // Main Content updates
-  document.getElementById("current-location-text").textContent =
-    locationString;
-  document.getElementById(
-    "map-location-display"
-  ).textContent = `${locationName}, ${weatherData.country}`;
-  document.getElementById("main-temp").textContent = `${tempC}°`;
-  document.getElementById("temp-max").textContent = toCelsius(
-    data.main.temp_max
-  );
-  document.getElementById("temp-min").textContent = toCelsius(
-    data.main.temp_min
-  );
-  document.getElementById("weather-description").textContent =
-    description;
-  document.getElementById(
-    "weather-icon"
-  ).src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
-
-  // Update Background and Dynamic Accent Color based on weather ID
-  updateBackground(conditionId);
-
-  // 2. Update Forecast (Bottom)
-  const forecastContainer = document.getElementById("forecast-days");
-  forecastContainer.innerHTML = "";
-
-  // Filter the forecast list to get one entry per day for the next 6 days
-  const dailyForecasts = {};
-  // The API provides data every 3 hours (8 entries per day). We filter for one entry per day.
-  for (let i = 0; i < forecast.list.length; i++) {
-    const day = new Date(forecast.list[i].dt * 1000).toLocaleDateString();
-    if (!dailyForecasts[day]) {
-      // Only store the first entry for each new day
-      dailyForecasts[day] = forecast.list[i];
-    }
-  }
-
-  // Convert object to array and skip the current day (first key)
-  const forecastItems = Object.values(dailyForecasts).slice(1, 7);
-
-  if (forecastItems.length === 0) {
-    showMessage("Could not generate 6-day forecast from API data.", true);
-  }
-
-  forecastItems.forEach((dayData) => {
-    const dayName = getDayName(dayData.dt);
-    // Use the main day temperature from the forecast entry
-    const tempDayC = toCelsius(dayData.main.temp);
-
-    const itemHtml = `
-                  <div class="text-center w-1/6 min-w-[100px] flex-shrink-0 opacity-90 transition hover:opacity-100 transform hover:scale-105">
-                      <p class="text-sm font-medium">${dayName}</p>
-                      <img src="https://openweathermap.org/img/wn/${dayData.weather[0].icon}@2x.png" alt="${dayData.weather[0].description}" class="w-12 h-12 mx-auto mt-2"/>
-                      <p class="text-3xl font-light mt-1">${tempDayC}°</p>
-                  </div>
-              `;
-    forecastContainer.insertAdjacentHTML("beforeend", itemHtml);
-  });
-
-  // 3. Update Recent Searches (Mocked for design purposes)
-  const recentCards = document.getElementById("recent-cards-container");
-  recentCards.innerHTML = `
-              <div class="glass-card p-3 rounded-xl w-32 flex flex-col items-center text-xs">
-                  <span class="font-medium dynamic-accent-text text-sm">Liverpool, UK</span>
-                  <span class="text-3xl font-light">16°</span>
-                  <span class="opacity-70 text-sm">Partly Cloudy</span>
-              </div>
-              <div class="glass-card p-3 rounded-xl w-32 flex flex-col items-center text-xs">
-                  <span class="font-medium dynamic-accent-text text-sm">Palermo, Italy</span>
-                  <span class="text-3xl font-light">-2°</span>
-                  <span class="opacity-70 text-sm">Rain/Thunder</span>
-              </div>
-          `;
-}
-
-// --- API & Core Logic ---
-
-async function fetchWeatherData(query, isCoord = false) {
-  clearMessage();
-  document.getElementById("weather-description").textContent =
-    "Fetching weather data...";
-  document.getElementById("main-temp").textContent = "--°";
-
-  try {
-    if (!API_KEY) {
-      throw new Error(
-        "OpenWeatherMap API Key is missing! Please replace the placeholder."
-      );
-    }
-
-    let lat, lon, name, country;
-
-    if (isCoord) {
-      // Coordinates were passed directly
-      lat = query.lat;
-      lon = query.lon;
-      name = "Current Location";
-      country = "GPS";
-
-      // Optional: Reverse Geocoding to get a real city name for display
-      const reverseGeoUrl = `https://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${API_KEY}`;
-      const reverseGeoData = await fetchWithBackoff(reverseGeoUrl);
-
-      if (reverseGeoData && reverseGeoData.length > 0) {
-        name = reverseGeoData[0].name;
-        country = reverseGeoData[0].country;
-      }
-    } else {
-      // City name was passed (Standard Geo-Coding)
-      // --- STEP 1: Geo-Coding (City Name -> Coordinates) ---
-      const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${query}&limit=1&appid=${API_KEY}`;
-      const geoData = await fetchWithBackoff(geoUrl);
-
-      if (!geoData || geoData.length === 0) {
-        throw new Error(
-          `Location not found for "${query}". Please try a different name.`
-        );
-      }
-
-      lat = geoData[0].lat;
-      lon = geoData[0].lon;
-      name = geoData[0].name;
-      country = geoData[0].country;
-    }
-
-    // --- STEP 2: Fetch Current Weather ---
-    const weatherUrl = `${API_BASE_URL}weather?lat=${lat}&lon=${lon}&appid=${API_KEY}`;
-    const currentData = await fetchWithBackoff(weatherUrl);
-
-    // --- STEP 3: Fetch 5-Day Forecast (Hourly/3-hr steps) ---
-    const forecastUrl = `${API_BASE_URL}forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}`;
-    const forecastData = await fetchWithBackoff(forecastUrl);
-
-    if (!currentData || !forecastData) {
-      throw new Error("Could not retrieve all necessary weather data.");
-    }
-
-    // Store Location info
-    weatherData.name = name;
-    weatherData.country = country;
-
-    // Map current weather data
-    weatherData.current = currentData;
-
-    // Map forecast data
-    weatherData.forecast = forecastData;
-
-    showMessage(
-      `Weather data successfully loaded for ${name}, ${country}!`
-    );
-    renderUI();
-  } catch (error) {
-    console.error("API Fetch Error:", error.message);
-    // Reset data on error
-    weatherData.current = null;
-    weatherData.forecast = null;
-    document.getElementById("weather-description").textContent =
-      "Failed to load weather.";
-    document.getElementById("main-temp").textContent = "--°";
-    showMessage(`Failed to fetch weather: ${error.message}`, true);
-  }
-}
-
-// --- Geolocation Functions ---
-
-function getCurrentLocation() {
-  closeModal();
-  showMessage("Requesting current location from browser...");
-
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        showMessage("Location retrieved. Fetching weather...");
-        const coords = {
-          lat: position.coords.latitude,
-          lon: position.coords.longitude,
-        };
-        fetchWeatherData(coords, true); // Pass coordinates and flag as coordinates
-      },
-      (error) => {
-        let errorMessage = "Geolocation failed. ";
-        if (error.code === error.PERMISSION_DENIED) {
-          errorMessage +=
-            "Please enable location services and grant permission to the browser.";
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          errorMessage +=
-            "Location information is currently unavailable.";
-        } else if (error.code === error.TIMEOUT) {
-          errorMessage += "Request timed out. Try again.";
-        } else {
-          errorMessage += "An unknown error occurred.";
+        // Vertical grid lines (for points/index)
+        ctx.setLineDash([2, 6]);
+        for (let i = 1; i < data.length - 1; i++) {
+            const x = padding + chartWidth * (i / (data.length - 1));
+            ctx.beginPath();
+            ctx.moveTo(x, padding);
+            ctx.lineTo(x, canvas.height - padding * 2);
+            ctx.stroke();
         }
-        showMessage(errorMessage, true);
-      },
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-    );
-  } else {
-    showMessage("Geolocation is not supported by this browser.", true);
-  }
-}
+        ctx.setLineDash([]); // Reset to solid line
 
-// --- Modal Control Functions ---
+        // --- 2. Draw Threshold Lines (Solid) ---
 
-function openModal() {
-  locationModal.classList.remove("hidden");
-  locationModal.classList.add("flex");
+        // CYAN THRESHOLD (65)
+        const yCyan = getYCoordinate(CYAN_THRESHOLD, chartHeight, padding);
+        ctx.strokeStyle = PRIMARY_LINE_COLOR;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(padding, yCyan);
+        ctx.lineTo(canvas.width - padding, yCyan);
+        ctx.stroke();
 
-  modalCityInput.focus();
-}
+        // RED DANGER LINE (80)
+        const yRed = getYCoordinate(RED_DANGER_LINE, chartHeight, padding);
+        ctx.strokeStyle = DANGER_COLOR;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(padding, yRed);
+        ctx.lineTo(canvas.width - padding, yRed);
+        ctx.stroke();
 
-function closeModal() {
-  locationModal.classList.add("hidden");
-  locationModal.classList.remove("flex");
-}
+        // --- 3. Draw the Line Graph (Bezier for smooth curve) ---
+        ctx.strokeStyle = PRIMARY_LINE_COLOR;
+        ctx.lineWidth = 3;
+        ctx.shadowColor = PRIMARY_LINE_COLOR;
+        ctx.shadowBlur = 15;
 
-async function handleSearch(inputElement) {
-  const city = inputElement.value.trim();
-  if (city) {
-    // Close modal if search came from modal
-    if (inputElement.id === "modal-city-input") {
-      closeModal();
+        ctx.beginPath();
+
+        // Move to the starting point
+        const startX = padding;
+        const startY = getYCoordinate(data[0].value, chartHeight, padding);
+        ctx.moveTo(startX, startY);
+
+        // Calculate points and draw curve segments
+        let points = [];
+        for (let i = 0; i < data.length; i++) {
+            const x = padding + chartWidth * (i / (data.length - 1));
+            const y = getYCoordinate(data[i].value, chartHeight, padding);
+            points.push({ x, y, value: data[i].value });
+
+            if (i < data.length - 1) {
+                const p2 = data[i + 1];
+                const x2 = padding + chartWidth * ((i + 1) / (data.length - 1));
+                const y2 = getYCoordinate(p2.value, chartHeight, padding);
+
+                // Control points for a smooth curve (Bezier curve approximation)
+                const cpx = (x + x2) / 2;
+                ctx.bezierCurveTo(cpx, y, cpx, y2, x2, y2);
+            }
+        }
+        ctx.stroke();
+
+        // --- 4. Draw Data Points and Highlight Threshold Crossings ---
+        ctx.shadowBlur = 0;
+
+        points.forEach(p => {
+            let dotColor = 'white';
+            let borderColor = PRIMARY_LINE_COLOR;
+            let borderWidth = 3;
+
+            // Highlight point at 65 (Cyan)
+            if (p.value === CYAN_THRESHOLD) {
+                dotColor = CYAN_THRESHOLD_COLOR;
+                borderColor = 'white';
+                borderWidth = 1.5;
+            }
+            // Highlight point at 80 (Red)
+            else if (p.value === RED_DANGER_LINE) {
+                dotColor = DANGER_COLOR;
+                borderColor = 'white';
+                borderWidth = 1.5;
+            }
+
+            // Draw fill (inner dot)
+            ctx.fillStyle = dotColor;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Draw stroke (border)
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = borderWidth;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI);
+            ctx.stroke();
+        });
+
+
+        // --- 5. Draw X-axis Labels (Months) ---
+        ctx.fillStyle = '#999999';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        const labelY = canvas.height - 5; // Position near the bottom edge
+
+        const monthLabels = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'];
+
+        for (let i = 0; i < data.length; i++) {
+            const x = padding + chartWidth * (i / (data.length - 1));
+            const newLabel = monthLabels[i];
+            ctx.fillText(newLabel, x, labelY);
+        }
+
+        // --- 6. Mark Threshold and Danger Labels
+        ctx.fillStyle = '#FFFFFF';
+        const threshold_label = 'threshold(65)';
+        const danger_label = 'danger(80)';
+        const x = padding + 50;
+        ctx.fillText(threshold_label, x, getYCoordinate(65 + 1, chartHeight, padding));
+        ctx.fillText(danger_label, x, getYCoordinate(80 + 1, chartHeight, padding));
+
     }
-    // Fetch the weather data using city name
-    await fetchWeatherData(city, false);
-  } else {
-    showMessage("Please enter a valid city name.", true);
-  }
-}
 
-// --- Event Listeners ---
+    // Draw initially and on resize
+    drawChart();
+    window.addEventListener('resize', drawChart);
+});
 
-// Main Search Icon Button (opens the location modal)
-mainSearchButton.addEventListener("click", openModal);
-
-// Modal Open Button (Map click)
-openMapModalButton.addEventListener("click", openModal);
-
-// Modal Close Button
-closeModalButton.addEventListener("click", closeModal);
-
-// Modal Fetch Button
-modalFetchButton.addEventListener("click", () =>
-  handleSearch(modalCityInput)
-);
-modalCityInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    handleSearch(modalCityInput);
+// dark mode button event listener
+document.addEventListener('DOMContentLoaded', () => {
+  const themeBtn = document.getElementById('dark-mode-toggle');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+    });
   }
 });
 
-// NEW LISTENER: Current Location Button
-currentLocationButton.addEventListener("click", getCurrentLocation);
 
-// Initialize state (empty)
-// Set the initial dark background placeholder
-document.body.style.backgroundImage = `var(--bg-image)`;
+// =======================================================
+// SEARCH BAR LOGIC
+// =======================================================
+
+
+// Wait for the DOM to be fully loaded before running the script
+// Wait for the DOM to be fully loaded before running the script
+document.addEventListener('DOMContentLoaded', () => {
+
+    const API_KEY = "a9e47096638b684adcbbf9078735d0c0"; 
+
+    // =======================================================
+    // ELEMENT REFERENCES
+    // =======================================================
+    const searchContainer = document.getElementById('search-container');
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+    const loadingIndicator = document.getElementById('loading-indicator');
+
+    // Weather Card Elements
+    const tempValue = document.getElementById('temp-value');
+    const tempMax = document.getElementById('temp-max');
+    const tempMin = document.getElementById('temp-min');
+    const currentCondition = document.getElementById('current-condition');
+    const currentLocation = document.getElementById('current-location');
+    const currentIcon = document.getElementById('current-icon');
+
+    // Keep track of the search bar state
+    let isExpanded = false;
+
+    // =======================================================
+    // WEATHER HELPER FUNCTIONS
+    // =======================================================
+
+    /**
+     * Updates the weather card UI with new data
+     * @param {object} data - The weather data from the API
+     */
+    function updateWeatherUI(data) {
+        // Round temperatures to the nearest whole number
+        tempValue.textContent = Math.round(data.main.temp);
+        tempMax.textContent = Math.round(data.main.temp_max);
+        tempMin.textContent = Math.round(data.main.temp_min);
+        
+        // Format location and condition
+        currentLocation.textContent = `${data.name}, ${data.sys.country}`;
+        currentCondition.textContent = capitalizeWords(data.weather[0].description);
+        
+        // Get and set the weather icon
+        currentIcon.innerHTML = ''; // Clear out the old emoji or icon
+        const iconImg = document.createElement('img');
+        iconImg.src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+        iconImg.alt = data.weather[0].description;
+        // Add classes for size - 8xl text is ~96px, so w-24 h-24 is a good fit.
+        iconImg.className = "w-24 h-24"; 
+        currentIcon.appendChild(iconImg);
+    }
+
+    /**
+     * Converts a string to Title Case.
+     * e.g., "scattered clouds" -> "Scattered Clouds"
+     */
+    function capitalizeWords(str) {
+        return str.replace(/\b\w/g, char => char.toUpperCase());
+    }
+
+
+    // =======================================================
+    // SEARCH BAR LOGIC
+    // =======================================================
+
+    // --- Tailwind classes for animation ---
+    const expandClasses = [
+        'w-64', 
+        'pl-4', 
+        'pr-12', 
+        'placeholder-dark-text-main', 
+        'dark:placeholder-dark-text-main'
+    ];
+    const collapseClasses = [
+        'w-11', 
+        'pl-0', 
+        'pr-0', 
+        'placeholder-transparent',
+        'dark:placeholder-transparent'
+    ];
+
+    /**
+     * Expands the search bar.
+     */
+    function expandSearch() {
+        if (!isExpanded) {
+            searchInput.classList.remove(...collapseClasses);
+            searchInput.classList.add(...expandClasses);
+            isExpanded = true;
+        }
+    }
+
+    /**
+     * Collapses the search bar, clears value, and removes focus.
+     */
+    function collapseSearch() {
+        if (isExpanded) {
+            searchInput.classList.remove(...expandClasses);
+            searchInput.classList.add(...collapseClasses);
+            searchInput.value = '';     // Clear the text
+            searchInput.blur();     // Remove focus
+            isExpanded = false;
+        }
+    }
+
+    /**
+     * Handles the search logic (API call).
+     */
+    async function handleSearch() {
+        const query = searchInput.value;
+
+        if (query.trim() === '') {
+            console.log("Empty query, not searching.");
+            return;
+        }
+
+        console.log(`Searching for: ${query}`);
+        
+        // Show the loading indicator
+        loadingIndicator.classList.remove('hidden');
+
+        try {
+            // --- STEP 1: Geo-Coding (City Name -> Coordinates) ---
+            const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${query}&limit=1&appid=${API_KEY}`;
+            
+            const geoResponse = await fetch(geoUrl);
+            const geoData = await geoResponse.json();
+
+            // Check if location was found
+            if (!geoData || geoData.length === 0) {
+                throw new Error(`Location not found for "${query}"`);
+            }
+
+            const { lat, lon } = geoData[0]; // Get lat/lon from geo data
+
+            // --- STEP 2: Fetch Weather (Coordinates -> Weather) ---
+            const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
+            
+            const weatherResponse = await fetch(weatherUrl);
+            const weatherData = await weatherResponse.json();
+
+            // Hide loading indicator
+            loadingIndicator.classList.add('hidden');
+
+            if (weatherData.cod === 200) { // Success
+                console.log("API Success:", weatherData);
+                
+                // Update the UI
+                updateWeatherUI(weatherData);
+
+                // On success, collapse the search bar
+                collapseSearch();
+            } else {
+                // Handle API errors (e.g., city not found)
+                throw new Error(weatherData.message || "Weather data not found");
+            }
+
+        } catch (error) {
+            // Hide loading indicator
+            loadingIndicator.classList.add('hidden');
+
+            // Handle all errors (Network, Geo, Weather)
+            console.error("Search Error:", error.message);
+            alert(`Error: ${error.message}. Please check the location name.`);
+            
+            // --- DO NOT COLLAPSE ---
+            // Let the user see their typo and fix it.
+        }
+    }
+
+    // =======================================================
+    // EVENT LISTENERS (Unchanged from your code)
+    // =======================================================
+
+    // 1. Hovering over the whole container expands it
+    searchContainer.addEventListener('mouseenter', expandSearch);
+
+    // 2. Clicking into the input field expands it (locks it)
+    searchInput.addEventListener('focus', expandSearch);
+
+    // 3. When the mouse leaves, only collapse if NOT focused
+    searchContainer.addEventListener('mouseleave', () => {
+        if (document.activeElement !== searchInput) {
+            collapseSearch();
+        }
+    });
+
+    // 4. Clicking the search button
+    searchButton.addEventListener('click', async (event) => { // <-- Add 'async'
+        event.preventDefault(); 
+        if (!isExpanded) {
+            expandSearch();
+            searchInput.focus(); 
+        } else {
+            await handleSearch(); // <-- Add 'await'
+        }
+    });
+
+    // 5. Pressing "Enter" in the input field
+    searchInput.addEventListener('keydown', async (event) => { // <-- Add 'async'
+        if (event.key === 'Enter') {
+            await handleSearch(); // <-- Add 'await'
+        }
+    });
+
+    // 6. When the input loses focus (blur)
+    searchInput.addEventListener('blur', (event) => {
+        const newFocusTarget = event.relatedTarget;
+        if (!searchContainer.contains(newFocusTarget)) {
+            collapseSearch();
+        }
+    });
+});

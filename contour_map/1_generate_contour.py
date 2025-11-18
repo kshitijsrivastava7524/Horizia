@@ -8,18 +8,20 @@ from osgeo import gdal, osr, ogr
 # --- 1. SET YOUR PARAMETERS HERE ---
 
 # Input DEM file you downloaded from Google Earth Engine
-DEM_FILE = 'data/dem_for_qgis.tiff' 
+# DEM_FILE = 'data/dem_for_qgis.tiff'  #OLD
+DEM_FILE = 'data/submission_dem.tiff'
 
 # Where to save the final PNG
-OUTPUT_PNG = 'generated_maps/default-dark-mode-100-1.png'
+# OUTPUT_PNG = 'generated_maps/default-dark-mode-100-1.png' #OLD
+OUTPUT_PNG = 'generated_maps/submission-dark-mode-30-1.png'
 
 # Temporary file to store the contours (will be deleted)
 TEMP_VECTOR_FILE = '.tmp/temp_contours.gpkg' # GPKG is a modern format
 
 # Your settings
-CONTOUR_INTERVAL = 100
+CONTOUR_INTERVAL = 30
 LINE_WIDTH = 0.2     # This is in 'points' (matplotlib's unit)
-LINE_COLOR = '#b2b2b2'
+LINE_COLOR = '#ffffff' #'#b2b2b2'
 BACKGROUND_COLOR = '#000000'
 EXPORT_DPI = 300
 

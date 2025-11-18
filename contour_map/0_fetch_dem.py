@@ -8,13 +8,22 @@ except Exception:
     ee.Authenticate()
     ee.Initialize(project='horizia-dem-project-478309') #ace-connection-447103-v6')
 
-# Define area of interest (Same as your team's)
-aoi = ee.Geometry.Polygon([
-    [[87.9, 27.6], [88.6, 27.6], [88.6, 28.2], [87.9, 28.2], [87.9, 27.6]]
-])
+# Define area of interest (Same as your team's) (OLD)
+# aoi = ee.Geometry.Polygon([
+#     [[87.9, 27.6], [88.6, 27.6], [88.6, 28.2], [87.9, 28.2], [87.9, 27.6]]
+# ])
+
+aoi = ee.Geometry.Polygon([[88.03, 27.72],
+ [88.06, 27.72],
+ [88.06, 27.75],
+ [88.03, 27.75],
+ [88.03, 27.72]])
 
 # 1. Get the DEM
-dem = ee.Image('USGS/SRTMGL1_003').clip(aoi).select('elevation')
+dem_native = ee.Image('USGS/SRTMGL1_003').clip(aoi).select('elevation')
+
+# Force "smooth" resampling BEFORE the export.
+dem = dem_native.resample('bilinear')
 
 # 2. Harmonize datatype (good practice)
 dem = dem.toFloat()
@@ -27,10 +36,10 @@ print("This may take a minute. The script will 'hang' while it works...")
 try:
     # Define the download parameters
     download_params = {
-        'scale': 30,  # 30m is the native scale for SRTM
+        'scale': 10,  # 10m is the native scale for SRTM
         'region': aoi.getInfo()['coordinates'],
         'format': 'GeoTIFF', # We want a GeoTIFF file
-        'fileName': 'dem_for_qgis'
+        'fileName': 'dem_aligned_10m'
     }
 
     # This is a SYNCHRONOUS request. The script will wait for GEE
