@@ -12,6 +12,9 @@ import os
 S2_PATH   = "../data/processed/stack_normalized1.tif"      # Sentinel-2 composite (normalized)
 PROB_PATH = "../data/output/predicted_lake_prob1.tif"      # Model probability output
 BIN_PATH  = "../data/output/predicted_lake_binary1.tif"    # Binary mask
+S2_PATH   = "../data/processed/stack_normalized1.tif"      # Sentinel-2 composite (normalized)
+PROB_PATH = "../data/output/predicted_lake_prob1.tif"      # Model probability output
+BIN_PATH  = "../data/output/predicted_lake_binary1.tif"    # Binary mask
 AOI_NAME  = "Himalayan Glacial Lakes"
 STATIC_ONLY = False  # Set to True if you don't want interactive Leafmap view
 
@@ -126,6 +129,11 @@ if not STATIC_ONLY:
     # Use rio-tiler valid colormap
     m.add_raster(BIN_PATH, layer_name="Predicted Lakes", colormap="blues", opacity=0.6)
 
+    m.add_raster(S2_PATH, layer_name="Sentinel-2 RGB", bands=[3,2,1], opacity=0.7)
+    m.add_raster(PROB_PATH, layer_name="Lake Probability", colormap="gray", opacity=0.5)
+
+    # Use rio-tiler valid colormap
+    m.add_raster(BIN_PATH, layer_name="Predicted Lakes", colormap="blues", opacity=0.6)
+
     m.add_legend(title="Predicted Lakes", labels=["Lake Regions"], colors=["#00FFFF"])
     m.add_title(AOI_NAME)
-    m.show()
