@@ -49,7 +49,7 @@
         <div id="loading-indicator"
             class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
             <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-accent-blue"></div>
-            <p class="text-xl ml-4 bg-white bg-opacity-70 border-2 rounded-2xl pl-2 pr-2">Loading weather data...</p>
+            <p class="text-xl ml-4 bg-primary dark:bg-dark-primary text-text-main dark:text-dark-text-main rounded-2xl pl-4 pr-4">Loading weather data...</p>
         </div>
 
         <!-- Main Grid Layout -->
@@ -127,11 +127,11 @@
                             <!-- Weather and Location -->
                             <div class="text-left pt-2">
                                 <div id="current-condition"
-                                    class="text-base text-text-subtle dark:text-dark-text-subtle">
-                                    --
+                                    class="text-base text-text-subtle dark:text-dark-text-subtle min-h-[1.5rem]">
+                                    Enter a city name 
                                 </div>
-                                <div id="current-location" class="text-sm text-text-subtle dark:text-dark-text-subtle">
-                                    --
+                                <div id="current-location" class="text-sm text-text-subtle dark:text-dark-text-subtle min-h-[1.25rem]">
+                                    to load weather data...
                                 </div>
                             </div>
                         </div>
