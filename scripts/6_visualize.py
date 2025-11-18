@@ -9,14 +9,14 @@ import os
 # ------------------------------
 # CONFIG
 # ------------------------------
-S2_PATH   = "../data/processed/stack_normalized.tif"      # Sentinel-2 composite (normalized)
-PROB_PATH = "../data/output/predicted_lake_prob.tif"      # Model probability output
-BIN_PATH  = "../data/output/predicted_lake_binary.tif"    # Binary mask
+S2_PATH   = "../data/processed/stack_normalized1.tif"      # Sentinel-2 composite (normalized)
+PROB_PATH = "../data/output/predicted_lake_prob1.tif"      # Model probability output
+BIN_PATH  = "../data/output/predicted_lake_binary1.tif"    # Binary mask
 AOI_NAME  = "Himalayan Glacial Lakes"
 STATIC_ONLY = False  # Set to True if you don't want interactive Leafmap view
 
 # --- New settings for saving plots ---
-OUTPUT_DIR = "../data/output/"
+OUTPUT_DIR = "../data/output/images/"
 EXPORT_DPI = 300
 # ------------------------------
 
@@ -85,9 +85,9 @@ plt.close(fig_overlay)
 print(f"Saved: {overlay_path}")
 print("--- Individual plot saving complete ---")
 
-# -----------------------------------------------------------------
+
 # ORIGINAL: Static visualization (shows the 1x3 combined plot)
-# -----------------------------------------------------------------
+
 # This block is unchanged and will still display the combined plot
 plt.figure(figsize=(10, 10))
 plt.subplot(1, 3, 1)
@@ -111,16 +111,21 @@ plt.show()
 
 # ---------- Interactive map ----------
 # This block is unchanged
+# ---------- Interactive map ----------
 if not STATIC_ONLY:
-    print("Launching interactive Leafmap window...")
+
     m = leafmap.Map(
         center=[(bounds.top + bounds.bottom) / 2, (bounds.left + bounds.right) / 2],
         zoom=10
     )
+
     m.add_basemap("SATELLITE")
-    m.add_raster(S2_PATH, layer_name="Sentinel-2 RGB", bands=[3, 2, 1], opacity=0.7)
-    m.add_raster(PROB_PATH, layer_name="Lake Probability", colormap="Blues", opacity=0.5)
-    m.add_raster(BIN_PATH, layer_name="Predicted Lakes", colormap="cyan", opacity=0.6)
+    m.add_raster(S2_PATH, layer_name="Sentinel-2 RGB", bands=[3,2,1], opacity=0.7)
+    m.add_raster(PROB_PATH, layer_name="Lake Probability", colormap="gray", opacity=0.5)
+
+    # Use rio-tiler valid colormap
+    m.add_raster(BIN_PATH, layer_name="Predicted Lakes", colormap="blues", opacity=0.6)
+
     m.add_legend(title="Predicted Lakes", labels=["Lake Regions"], colors=["#00FFFF"])
     m.add_title(AOI_NAME)
     m.show()
