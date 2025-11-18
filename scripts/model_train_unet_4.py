@@ -2,12 +2,10 @@
 import os
 import glob
 import random
-import argparse
-from tqdm import tqdm
-
 import numpy as np
 import torch
 import torch.nn as nn
+from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
 
 # ---------- Dataset ----------
@@ -25,7 +23,6 @@ class LakeTileDataset(Dataset):
         img = np.load(self.imgs[idx]).astype("float32")  # (C,H,W)
         mask = np.load(self.masks[idx]).astype("float32")  # (H,W)
         img = np.nan_to_num(img, nan=0.0, posinf=0.0, neginf=0.0)
-        
         # This ensures the mask is strictly binary (0.0 or 1.0)
         # It handles cases where masks are 0/255, 0/2, etc.
         mask = (mask > 0.5).astype("float32")
@@ -113,12 +110,8 @@ def train_loop(args):
     device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
     print("Using device:", device)
 
-    train_ds = LakeTileDataset(os.path.join(args.tiles, "train", "images"),
-                               os.path.join(args.tiles, "train", "masks"),
-                               augment=True)
-    val_ds = LakeTileDataset(os.path.join(args.tiles, "val", "images"),
-                             os.path.join(args.tiles, "val", "masks"),
-                             augment=False)
+    train_ds = LakeTileDataset(os.path.join(args.tiles, "train", "images"),os.path.join(args.tiles, "train", "masks"),augment=True)
+    val_ds = LakeTileDataset(os.path.join(args.tiles, "val", "images"),os.path.join(args.tiles, "val", "masks"),augment=False)
 
     train_loader = DataLoader(train_ds, batch_size=args.batch, shuffle=True, num_workers=2, pin_memory=True)
     val_loader = DataLoader(val_ds, batch_size=args.batch, shuffle=False, num_workers=2, pin_memory=True)
@@ -174,15 +167,14 @@ def train_loop(args):
     torch.save(model.state_dict(), os.path.join(args.out, "horizia_unet_final.pth"))
     print("Training complete. Best IoU:", best_iou)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--tiles", default="../data/tiles", help="Tiles root (train/val subfolders)")
-    parser.add_argument("--out", default="../models", help="Model output folder")
-    parser.add_argument("--epochs", type=int, default=30)
-    parser.add_argument("--batch", type=int, default=4)
-    parser.add_argument("--lr", type=float, default=1e-4)
-    parser.add_argument("--thresh", type=float, default=0.5, help="Threshold for IoU calculation")
-    parser.add_argument("--no-cuda", action="store_true", help="Disable CUDA even if available")
-    args = parser.parse_args()
+args = {
+    "tiles": "../data/tiles",
+    "out": "../models",
+    "epochs": 30,
+    "batch": 4,
+    "lr": 1e-4,
+    "thresh": 0.5,
+    "no_cuda": False
+}
 
-    train_loop(args)
+train_loop(args)

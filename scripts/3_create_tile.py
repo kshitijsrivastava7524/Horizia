@@ -4,7 +4,6 @@ import numpy as np
 import rasterio
 from rasterio.windows import Window
 from math import ceil
-import argparse
 from sklearn.model_selection import train_test_split
 
 def tile_and_save(img_path, mask_path, out_dir, patch=256, val_split=0.2, random_seed=42):
@@ -27,8 +26,8 @@ def tile_and_save(img_path, mask_path, out_dir, patch=256, val_split=0.2, random
         for i in range(nH):
             for j in range(nW):
                 window = Window(j*patch, i*patch, patch, patch).intersection(Window(0,0,W,H))
-                img = src_img.read(window=window).astype('float32')  # shape (C,h,w)
-                mask = src_mask.read(1, window=window).astype('uint8')  # shape (h,w)
+                img = src_img.read(window=window).astype('float32')
+                mask = src_mask.read(1, window=window).astype('uint8')
 
                 # pad if at edge
                 ph = patch - img.shape[1]
@@ -37,7 +36,7 @@ def tile_and_save(img_path, mask_path, out_dir, patch=256, val_split=0.2, random
                     img = np.pad(img, ((0,0),(0,ph),(0,pw)), mode='constant', constant_values=0)
                     mask = np.pad(mask, ((0,ph),(0,pw)), mode='constant', constant_values=0)
 
-                # skip tiles with no data (optional): skip if all zeros in image
+                # skip tiles with no data (optional)
                 if img.sum() == 0:
                     idx += 1
                     continue
@@ -63,11 +62,10 @@ def tile_and_save(img_path, mask_path, out_dir, patch=256, val_split=0.2, random
         img_paths, mask_paths, test_size=val_split, random_state=random_seed
     )
 
-    # move files to final folders
+    # move files
     def move_files(src_list, dst_img_dir, dst_mask_dir):
         for s_img in src_list:
             base = os.path.basename(s_img)
-            idx = base.split("_")[1]
             i_mask = s_img.replace("all_tiles_images", "all_tiles_masks").replace("tile_", "mask_")
             dst_img_path = os.path.join(dst_img_dir, base)
             dst_mask_path = os.path.join(dst_mask_dir, os.path.basename(i_mask))
@@ -80,15 +78,12 @@ def tile_and_save(img_path, mask_path, out_dir, patch=256, val_split=0.2, random
     print(f"Created {len(train_imgs)} train tiles and {len(val_imgs)} val tiles.")
     print("Train images ->", img_out_train)
     print("Val images ->", img_out_val)
-    
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Tile normalized stack and mask into train/val .npy patches")
-    parser.add_argument("--stack", default="../data/processed/stack_normalized.tif", help="Normalized stack (multi-band) path")
-    parser.add_argument("--mask", default="../data/processed/lake_mask.tif", help="Binary mask path")
-    parser.add_argument("--out", default="../data/tiles", help="Output directory for tiles")
-    parser.add_argument("--patch", type=int, default=256, help="Patch size (square)")
-    parser.add_argument("--val_split", type=float, default=0.2, help="Validation split fraction")
-    args = parser.parse_args()
 
-    tile_and_save(args.stack, args.mask, args.out, patch=args.patch, val_split=args.val_split)
+STACK = "../data/processed/stack_normalized.tif"
+MASK = "../data/processed/lake_mask.tif"
+OUT = "../data/tiles"
+PATCH = 256
+VAL_SPLIT = 0.2
+
+tile_and_save(STACK, MASK, OUT, patch=PATCH, val_split=VAL_SPLIT)

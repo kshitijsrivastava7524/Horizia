@@ -2,8 +2,8 @@ import rasterio
 import numpy as np
 import os
 
-INPUT = "../data/raw/horizia_stack.tif"
-OUTPUT = "../data/processed/stack_normalized.tif"
+INPUT = "../data/raw/horizia_stack1.tif"
+OUTPUT = "../data/processed/stack_normalized1.tif"
 os.makedirs("../data/processed", exist_ok=True)
 
 with rasterio.open(INPUT) as src:
