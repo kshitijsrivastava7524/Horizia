@@ -3,3 +3,11 @@
 *.zip
 *.hdf
 *.tiff
+
+# Ignore image files
+*.jpeg
+*.jpg
+*.png
+
+#ignore hidden files
+.*

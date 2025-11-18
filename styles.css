@@ -1,0 +1,75 @@
+/* Define the Noto Sans font globally */
+
+/* .main-bg {
+  background-image: url("images/image1.jpg");  
+  background-size: cover;  
+  background-position: center;  
+  background-repeat: no-repeat;  
+  background-attachment: fixed;  
+} */
+/*
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap");
+body {
+  background-color: #0f0f0f; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+} */
+/* 
+body {
+  background-image: url("images/image2.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed; 
+} */
+/* 
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap");
+body {
+  font-family: "Inter", sans-serif;
+  background-color: #242424; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+} */
+
+/* ======================================================= */
+/* == CSS STYLES: This content would typically go into styles.css == */
+/* ======================================================= */
+/* 
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+} */
+
+:root {
+  --bg-color: #14171e; /* Dark background */
+  --dark-bg: #1a1a1a; /* Card background */
+  --highlight-color: #2d3342; /* Even lighter background for subtle highlights */
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --accent-blue: #5c9ce5;
+  --accent-yellow: #ffc000;
+}
+
+/* body {
+  font-family: "Inter", sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  padding: 1rem;
+} */
+/* 
+.card {
+  background-color: var(--dark-bg);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.6);
+} */
+
+
+
