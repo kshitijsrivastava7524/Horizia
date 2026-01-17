@@ -12,9 +12,6 @@ import os
 S2_PATH   = "../data/processed/stack_normalized1.tif"      # Sentinel-2 composite (normalized)
 PROB_PATH = "../data/output/predicted_lake_prob1.tif"      # Model probability output
 BIN_PATH  = "../data/output/predicted_lake_binary1.tif"    # Binary mask
-S2_PATH   = "../data/processed/stack_normalized1.tif"      # Sentinel-2 composite (normalized)
-PROB_PATH = "../data/output/predicted_lake_prob1.tif"      # Model probability output
-BIN_PATH  = "../data/output/predicted_lake_binary1.tif"    # Binary mask
 AOI_NAME  = "Himalayan Glacial Lakes"
 STATIC_ONLY = False  # Set to True if you don't want interactive Leafmap view
 

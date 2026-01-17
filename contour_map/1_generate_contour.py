@@ -20,7 +20,7 @@ TEMP_VECTOR_FILE = '.tmp/temp_contours.gpkg' # GPKG is a modern format
 
 # Your settings
 CONTOUR_INTERVAL = 30
-LINE_WIDTH = 0.2     # This is in 'points' (matplotlib's unit)
+LINE_WIDTH = 0.3   # This is in 'points' (matplotlib's unit)
 LINE_COLOR = '#ffffff' #'#b2b2b2'
 BACKGROUND_COLOR = '#000000'
 EXPORT_DPI = 300

@@ -8,9 +8,7 @@ from model_train_unet_4 import UNet   # Ensure file renamed (no numeric prefix)
 
 # ---------- CONFIG ----------
 STACK_PATH = "../data/processed/stack_normalized1.tif"
-STACK_PATH = "../data/processed/stack_normalized1.tif"
 MODEL_PATH = "../../models/horizia_unet_best.pth"
-OUT_PATH   = "../data/output/predicted_lake_prob1.tif"
 OUT_PATH   = "../data/output/predicted_lake_prob1.tif"
 PATCH      = 256
 THRESH     = 0.5
@@ -62,7 +60,6 @@ with rasterio.open(OUT_PATH, "w", **profile) as dst:
 print("Saved predicted probability map:", OUT_PATH)
 
 # ---------- Binary mask ----------
-BIN_PATH = OUT_PATH.replace("_prob1.tif", "_binary1.tif")
 BIN_PATH = OUT_PATH.replace("_prob1.tif", "_binary1.tif")
 binary_mask = (pred_mask > THRESH).astype("uint8")
 profile.update(dtype="uint8")
