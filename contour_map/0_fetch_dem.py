@@ -22,13 +22,8 @@ aoi = ee.Geometry.Polygon([[88.03, 27.72],
 # 1. Get the DEM
 dem_native = ee.Image('USGS/SRTMGL1_003').clip(aoi).select('elevation')
 
-# Force "smooth" resampling BEFORE the export.
 dem = dem_native.resample('bilinear')
-
-# 2. Harmonize datatype (good practice)
 dem = dem.toFloat()
-
-# --- MODIFIED PART: Get a direct download URL ---
 
 print("Preparing your DEM for direct download...")
 print("This may take a minute. The script will 'hang' while it works...")
@@ -36,9 +31,9 @@ print("This may take a minute. The script will 'hang' while it works...")
 try:
     # Define the download parameters
     download_params = {
-        'scale': 10,  # 10m is the native scale for SRTM
+        'scale': 10,  # 10m - native scale for SRTM
         'region': aoi.getInfo()['coordinates'],
-        'format': 'GeoTIFF', # We want a GeoTIFF file
+        'format': 'GeoTIFF', 
         'fileName': 'dem_aligned_10m'
     }
 

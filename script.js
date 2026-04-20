@@ -416,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =======================================================
-    // EVENT LISTENERS (Unchanged from your code)
+    // EVENT LISTENERS 
     // =======================================================
 
     // 1. Hovering over the whole container expands it

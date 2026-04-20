@@ -51,7 +51,6 @@ def generate_contour_map():
     # Get the raster band
     src_band = src_ds.GetRasterBand(1)
 
-    # --- FIX: Get the NoData value from the DEM ---
     nodata_val = src_band.GetNoDataValue()
     use_nodata_flag = 0  # 0 = False
 
@@ -69,8 +68,8 @@ def generate_contour_map():
         CONTOUR_INTERVAL,         # Contour interval
         0,                        # Offset
         [],                       # No fixed levels
-        use_nodata_flag,          # <-- FIX: Tells GDAL to use the NoData value
-        nodata_val,               # <-- FIX: Passes the actual NoData value
+        use_nodata_flag,          # Tells GDAL to use the NoData value
+        nodata_val,               # Passes the actual NoData value
         dst_layer,                # Output layer
         0,                        # Index of elevation field
         0                         # Index of ID field
@@ -103,8 +102,6 @@ def generate_contour_map():
     # Turn off all axes, labels, and borders
     ax.set_axis_off()
 
-    # This is the magic: save with bbox_inches='tight' and pad_inches=0
-    # This automatically crops the image to your data, removing all padding.
     print(f"Saving final image to {OUTPUT_PNG} at {EXPORT_DPI} DPI...")
     plt.savefig(
         OUTPUT_PNG,

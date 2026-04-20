@@ -1,22 +1,16 @@
-#library importing
 import ee
 
-# Deciding the area of interest
-# AOI = [87.9, 27.6, 88.6, 28.2]  # decide
-GEE_FOLDER = 'GEE_Exports'
-
-#Authenticate and initialise Earth Engine
+# authenticate and initialise Earth Engine
 try:
     ee.Initialize(project='ace-connection-447103-v6')
 except Exception:
     ee.Authenticate()
     ee.Initialize(project='ace-connection-447103-v6')
 
-# Define area of interest
+#area of interest
 aoi = ee.Geometry.Polygon([
-    # [[87.9, 27.6], [88.6, 27.6], [88.6, 28.2], [87.9, 28.2], [87.9, 27.6]]
     [[88.03, 27.72],[88.06, 27.72],[88.06, 27.75],[88.03, 27.75],[88.03, 27.72]]
-]) # go
+])
 
 
 # Sentinel-2 (optical)
