@@ -4,6 +4,25 @@
 // const API_BASE_URL = "https://api.openweathermap.org/data/2.5/";
 // const GEO_API_URL = "https://api.openweathermap.org/geo/1.0/direct";
 
+async function startApp() {
+  document.getElementById("status").innerText = "Syncing...";
+
+  try {
+    await window.api.syncData();
+    document.getElementById("status").innerText = "Up to date";
+
+    // OPTIONAL: load latest data into UI
+    loadLatestData();
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById("status").innerText = "Error syncing";
+  }
+}
+
+// THIS LINE IS IMPORTANT
+window.onload = startApp;
+
 // Helper function to convert UNIX timestamp to a formatted time string
 const formatTime = (timestamp, timezoneOffset) => {
     if (!timestamp) return 'N/A';

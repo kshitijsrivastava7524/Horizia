@@ -2,7 +2,7 @@ import rasterio
 import numpy as np
 import os
 
-INPUT = "../data/raw/horizia_stack1.tif"
+INPUT = "../data/raw/site1/2026-04-21.tif"
 OUTPUT = "../data/processed/stack_normalized1.tif"
 os.makedirs("../data/processed", exist_ok=True)
 

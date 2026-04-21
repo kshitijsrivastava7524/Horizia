@@ -62,7 +62,11 @@ print("Saved predicted probability map:", OUT_PATH)
 # ---------- Binary mask ----------
 BIN_PATH = OUT_PATH.replace("_prob1.tif", "_binary1.tif")
 binary_mask = (pred_mask > THRESH).astype("uint8")
-profile.update(dtype="uint8")
+# profile.update(dtype="uint8")
+profile.update(
+    dtype="uint8",
+    nodata=0  # IMPORTANT FIX
+)
 with rasterio.open(BIN_PATH, "w", **profile) as dst:
     dst.write(binary_mask, 1)
 print("Saved binary lake mask:", BIN_PATH)
