@@ -1,8 +1,8 @@
 
 // OpenWeatherMap API Constants
 // const API_KEY = "a9e47096638b684adcbbf9078735d0c0"; // Using the key provided by the user
-const API_BASE_URL = "https://api.openweathermap.org/data/2.5/";
-const GEO_API_URL = "https://api.openweathermap.org/geo/1.0/direct";
+// const API_BASE_URL = "https://api.openweathermap.org/data/2.5/";
+// const GEO_API_URL = "https://api.openweathermap.org/geo/1.0/direct";
 
 // Helper function to convert UNIX timestamp to a formatted time string
 const formatTime = (timestamp, timezoneOffset) => {
@@ -416,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =======================================================
-    // EVENT LISTENERS (Unchanged from your code)
+    // EVENT LISTENERS 
     // =======================================================
 
     // 1. Hovering over the whole container expands it
