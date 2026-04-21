@@ -3,6 +3,7 @@
 *.zip
 *.hdf
 *.tiff
+*.npy
 
 # Ignore image files
 *.jpeg

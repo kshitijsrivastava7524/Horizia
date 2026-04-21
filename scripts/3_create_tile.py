@@ -18,7 +18,7 @@ def tile_and_save(img_path, mask_path, out_dir, patch=256, val_split=0.2, random
 
     with rasterio.open(img_path) as src_img, rasterio.open(mask_path) as src_mask:
         H, W = src_img.height, src_img.width
-        bands = src_img.count
+        # bands = src_img.count
         nH, nW = ceil(H / patch), ceil(W / patch)
 
         tile_paths = []

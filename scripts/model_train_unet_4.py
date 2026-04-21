@@ -176,5 +176,7 @@ args = {
     "thresh": 0.5,
     "no_cuda": False
 }
-
-train_loop(args)
+from types import SimpleNamespace
+args = SimpleNamespace(**args)
+if __name__ == '__main__':
+    train_loop(args)

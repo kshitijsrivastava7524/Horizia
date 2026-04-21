@@ -1,15 +1,14 @@
 #library importing
 import ee
 
-# Deciding the area of interest
 GEE_FOLDER = 'GEE_Exports'
 
 #Authenticate and initialise Earth Engine
 try:
-    ee.Initialize(project='ace-connection-447103-v6')
+    ee.Initialize(project='favorable-array-486408-d1')
 except Exception:
     ee.Authenticate()
-    ee.Initialize(project='ace-connection-447103-v6')
+    ee.Initialize(project='favorable-array-486408-d1')
 
 # Define area of interest
 aoi = ee.Geometry.Polygon([
