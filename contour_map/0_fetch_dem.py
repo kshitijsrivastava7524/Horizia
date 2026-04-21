@@ -1,4 +1,5 @@
 import ee
+import requests
 
 # Authenticate and initialise Earth Engine
 # This will ask YOU to log in with your own Google account
@@ -45,11 +46,15 @@ try:
     # This is a SYNCHRONOUS request. The script will wait for GEE
     # to process the file and generate a link.
     url = dem.getDownloadURL(download_params)
+    response = requests.get(url)
+
+    with open('data/submission_dem.tiff', 'wb') as f:
+        f.write(response.content)
     
-    print("\n--- DOWNLOAD READY ---")
-    print("COPY and PASTE this URL into your browser to download the file:")
-    print(f"\n{url}\n")
-    print("(This link will expire in about 3 days)")
+    # print("\n--- DOWNLOAD READY ---")
+    # print("COPY and PASTE this URL into your browser to download the file:")
+    # print(f"\n{url}\n")
+    # print("(This link will expire in about 3 days)")
 
 except ee.ee_exception.EEException as e:
     print("\nAn error occurred. The region might be too large for a direct download.")
