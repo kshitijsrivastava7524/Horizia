@@ -4,7 +4,7 @@ const { spawn } = require('child_process');
 const chokidar = require('chokidar');
 
 let mainWindow;
-const syncingSites = new Set(); // ✅ track per-site instead of one global flag
+const syncingSites = new Set(); //  track per-site instead of one global flag
 const SYNC_TIMEOUT_MS = 5 * 60 * 1000;
 const VALID_SITES = ['site1', 'site2', 'site3', 'site4'];
 
@@ -61,12 +61,12 @@ const SCRIPT_PATH = path.join(__dirname, '../backend/sync_pipeline.py');
 // ---------------- SYNC HANDLER ----------------
 ipcMain.handle('sync-data', async (_, site) => {
 
-  // ✅ Validate site
+  // Validate site
   if (!VALID_SITES.includes(site)) {
     return { status: 'error', message: `Invalid site: ${site}` };
   }
 
-  // ✅ Per-site busy check
+  // Per-site busy check
   if (syncingSites.has(site)) {
     return { status: 'busy', message: `${site} sync already running` };
   }
@@ -74,7 +74,7 @@ ipcMain.handle('sync-data', async (_, site) => {
   syncingSites.add(site);
 
   return new Promise((resolve) => {
-    // ✅ Pass site as argument to Python
+    // Pass site as argument to Python
     const py = spawn(PYTHON_PATH, [SCRIPT_PATH, site]);
 
     let logs = [];
@@ -139,7 +139,7 @@ ipcMain.handle('sync-data', async (_, site) => {
 
     py.on('error', (err) => {
       clearTimeout(timeout);
-      syncingImages.delete(site);
+      syncingSites.delete(site);
       console.error(`Failed to start Python for ${site}:`, err);
       resolveOnce({ status: 'error', site, message: 'Failed to start Python', error: err.message });
     });
