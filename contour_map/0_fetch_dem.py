@@ -37,7 +37,6 @@ print("This may take a minute. The script will 'hang' while it works...")
 try:
     # Define the download parameters
     download_params = {
-        'scale': 10,  # 10m is the native scale for SRTM
         'region': aoi.getInfo()['coordinates'],
         'format': 'GeoTIFF', # We want a GeoTIFF file
         'fileName': 'dem_aligned_10m'

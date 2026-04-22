@@ -5,11 +5,12 @@ import os
 # --- 1. SET YOUR PARAMETERS HERE ---
 
 # Input files (Update these paths to match your folder structure)
-CONTOUR_MAP_FILE = 'generated_maps/submission-dark-mode-30-1.png'
+# CONTOUR_MAP_FILE = 'generated_maps/submission-dark-mode-30-1.png'
+CONTOUR_MAP_FILE = 'generated_maps/contour_final.png'
 LAKE_OVERLAY_FILE = '../data/output/visualization_lakes_red_transparent.png'
 
 # Output file
-OUTPUT_FILE = 'generated_maps/submission_combined_contour_lake_map.png'
+OUTPUT_FILE = 'generated_maps/submission_combined_contour_lake_map-2.png'
 
 # Settings from your other script
 BACKGROUND_COLOR = '#000000' # Black background
