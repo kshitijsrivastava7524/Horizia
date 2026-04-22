@@ -53,8 +53,9 @@ app.on('activate', () => {
 
 // ---------------- CONFIG ----------------
 const PYTHON_PATH =
-  process.env.PYTHON_PATH ||
-  'C:\\Users\\kshit\\miniconda3\\envs\\horizia\\python.exe';
+  process.env.PYTHON_PATH || '../.venv/bin/python';
+//   'C:\\Users\\kshit\\miniconda3\\envs\\horizia\\python.exe' ||
+  
 
 const SCRIPT_PATH = path.join(__dirname, '../backend/sync_pipeline.py');
 
@@ -139,7 +140,7 @@ ipcMain.handle('sync-data', async (_, site) => {
 
     py.on('error', (err) => {
       clearTimeout(timeout);
-      syncingImages.delete(site);
+      syncingSites.delete(site);
       console.error(`Failed to start Python for ${site}:`, err);
       resolveOnce({ status: 'error', site, message: 'Failed to start Python', error: err.message });
     });
