@@ -123,6 +123,16 @@
                                     <span class="opacity-70">L <span id="temp-min">--</span>°</span>
                                 </div>
                             </div>
+                                                    <!-- ✅ STATUS BAR -->
+                            <div id="status" class="mb-4 text-lg">
+                                Status: Idle
+                            </div>
+
+                            <!-- ✅ SYNC BUTTON -->
+                            <button onclick="startSync()" 
+                                class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded mb-6">
+                                Sync Data
+                            </button>
 
                             <!-- Weather and Location -->
                             <div class="text-left pt-2">
@@ -164,7 +174,11 @@
                     </div>
                 </div>
             </div>
-
+            <!-- Logs -->
+    <div class="mt-6 bg-gray-900 p-4 rounded-xl h-64 overflow-y-auto">
+        <h2 class="text-lg mb-2">Logs</h2>
+        <div id="logs" class="text-sm"></div>
+    </div>
             <!-- COLUMN 2: Highlights (3-card grid) & Tall Map (Span 8) -->
             <div class="col-span-12 lg:col-span-8 flex flex-col space-y-6">
                 <div

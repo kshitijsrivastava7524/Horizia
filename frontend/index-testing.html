@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Horizia</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            'primary':          '#ffffff',
+            'secondary':        '#e5e5e5',
+            'text-main':        '#1a1a1a',
+            'text-subtle':      '#6b7280',
+            'dark-primary':     '#1a1a1a',
+            'dark-secondary':   '#333333',
+            'dark-text-main':   '#f0f0f0',
+            'dark-text-subtle': '#b0b0b0',
+            'accent-blue':      '#2874fc',
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+
+<body class="bg-[url('images/image1.jpg')] dark:bg-[url('images/image1-dark.jpg')] bg-cover bg-center bg-no-repeat bg-fixed">
+
+  <div id="app" class="max-w-7xl mx-auto py-8 px-4">
+    <h1 class="text-3xl font-bold mb-8 text-gray-100 dark:text-dark-text-main">Weather Dashboard</h1>
+
+    <!-- Loading Indicator -->
+    <div id="loading-indicator" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
+      <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-accent-blue"></div>
+      <p class="text-xl ml-4 bg-primary dark:bg-dark-primary text-text-main dark:text-dark-text-main rounded-2xl px-4 py-2">
+        Loading weather data...
+      </p>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-12 gap-4 items-start">
+
+      <!-- ======================== COLUMN 1 ======================== -->
+      <div class="col-span-12 lg:col-span-4 flex flex-col space-y-4">
+
+        <!-- Current Weather Card -->
+        <div class="w-full p-4 md:p-6 bg-primary dark:bg-dark-primary rounded-2xl shadow-2xl border border-secondary dark:border-dark-secondary text-text-main dark:text-dark-text-main transition duration-300">
+
+          <!-- Top bar: dark mode toggle + search -->
+          <div class="w-full flex justify-between items-center mb-6">
+            <button id="dark-mode-toggle"
+              class="p-3 bg-secondary dark:bg-dark-secondary text-text-main dark:text-dark-text-main rounded-full hover:bg-opacity-80 transition flex items-center justify-center"
+              title="Toggle Dark Mode">
+              <!-- Sun -->
+              <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8a4 4 0 100 8 4 4 0 000-8z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 3v1M12 20v1M20.66 12h-1M3.34 12h1M17.78 6.22l-.7.7M6.22 17.78l-.7.7M17.78 17.78l-.7-.7M6.22 6.22l-.7-.7"/>
+              </svg>
+              <!-- Moon -->
+              <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+              </svg>
+            </button>
+
+            <!-- Search -->
+            <div id="search-container" class="relative">
+              <input type="text" id="search-input"
+                class="h-11 w-11 rounded-full bg-accent-blue text-dark-text-main outline-none focus:ring-2 focus:ring-blue-400 transition-[width,padding] duration-300 ease-in-out placeholder-transparent"
+                placeholder="Search city..." />
+              <button id="search-button"
+                class="absolute top-0 right-0 h-11 w-11 p-3 bg-accent-blue text-dark-text-main rounded-full hover:bg-opacity-80 transition flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Temperature row -->
+          <div class="w-full flex flex-row items-center justify-between py-4">
+            <div class="text-6xl font-light text-text-main dark:text-dark-text-main">
+              <span id="temp-value">--</span>°C
+            </div>
+            <div class="flex flex-col text-lg font-medium pl-2 text-text-subtle dark:text-dark-text-subtle">
+              <span class="opacity-70">H <span id="temp-max">--</span>°</span>
+              <span class="opacity-70">L <span id="temp-min">--</span>°</span>
+            </div>
+            <div id="current-icon" class="text-8xl text-text-main dark:text-dark-text-main"></div>
+          </div>
+
+          <!-- Condition + location -->
+          <div class="text-left pb-4">
+            <div id="current-condition" class="text-base text-text-subtle dark:text-dark-text-subtle min-h-[1.5rem]">
+              Enter a city name
+            </div>
+            <div id="current-location" class="text-sm text-text-subtle dark:text-dark-text-subtle min-h-[1.25rem]">
+              to load weather data...
+            </div>
+          </div>
+
+          <!-- Sync by Site -->
+          <div class="border-t border-secondary dark:border-dark-secondary pt-4">
+            <p class="text-sm font-medium text-text-subtle dark:text-dark-text-subtle mb-3">Sync by Site</p>
+            <div class="grid grid-cols-2 gap-2">
+
+              <!-- Site 1 -->
+              <div class="bg-secondary dark:bg-dark-secondary rounded-xl p-3 flex flex-col gap-1">
+                <span class="text-xs font-semibold text-text-main dark:text-dark-text-main uppercase tracking-wide">Site 1</span>
+                <span id="status-site1" class="text-xs text-text-subtle dark:text-dark-text-subtle">Idle</span>
+                <button id="sync-btn-site1" onclick="startSync('site1')"
+                  class="mt-1 bg-accent-blue hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+                  Sync
+                </button>
+              </div>
+
+              <!-- Site 2 -->
+              <div class="bg-secondary dark:bg-dark-secondary rounded-xl p-3 flex flex-col gap-1">
+                <span class="text-xs font-semibold text-text-main dark:text-dark-text-main uppercase tracking-wide">Site 2</span>
+                <span id="status-site2" class="text-xs text-text-subtle dark:text-dark-text-subtle">Idle</span>
+                <button id="sync-btn-site2" onclick="startSync('site2')"
+                  class="mt-1 bg-accent-blue hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+                  Sync
+                </button>
+              </div>
+
+              <!-- Site 3 -->
+              <div class="bg-secondary dark:bg-dark-secondary rounded-xl p-3 flex flex-col gap-1">
+                <span class="text-xs font-semibold text-text-main dark:text-dark-text-main uppercase tracking-wide">Site 3</span>
+                <span id="status-site3" class="text-xs text-text-subtle dark:text-dark-text-subtle">Idle</span>
+                <button id="sync-btn-site3" onclick="startSync('site3')"
+                  class="mt-1 bg-accent-blue hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+                  Sync
+                </button>
+              </div>
+
+              <!-- Site 4 -->
+              <div class="bg-secondary dark:bg-dark-secondary rounded-xl p-3 flex flex-col gap-1">
+                <span class="text-xs font-semibold text-text-main dark:text-dark-text-main uppercase tracking-wide">Site 4</span>
+                <span id="status-site4" class="text-xs text-text-subtle dark:text-dark-text-subtle">Idle</span>
+                <button id="sync-btn-site4" onclick="startSync('site4')"
+                  class="mt-1 bg-accent-blue hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+                  Sync
+                </button>
+              </div>
+
+            </div>
+          </div>
+          <!-- END Sync by Site -->
+
+        </div>
+        <!-- END Weather Card -->
+
+        <!-- Chart Card -->
+        <div class="w-full p-4 md:p-6 bg-primary dark:bg-dark-primary rounded-2xl shadow-2xl border border-secondary dark:border-dark-secondary text-text-main dark:text-dark-text-main transition duration-300">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold">Chart</h2>
+          </div>
+          <div class="h-60 mb-6 relative">
+            <canvas id="chartCanvas" class="rounded-lg w-full h-full"></canvas>
+          </div>
+          <div class="pt-4 border-t border-secondary dark:border-dark-secondary">
+            <p class="text-sm text-text-subtle dark:text-dark-text-subtle mb-1">Threshold</p>
+            <span class="text-4xl font-extrabold text-accent-blue">65</span>
+          </div>
+        </div>
+        <!-- END Chart Card -->
+
+        <!-- Logs Card -->
+        <div class="w-full p-4 bg-gray-900 rounded-2xl border border-gray-700">
+          <h2 class="text-lg font-semibold text-gray-100 mb-3">Logs</h2>
+          <div id="logs" class="text-sm font-mono text-gray-300 h-56 overflow-y-auto space-y-1"></div>
+        </div>
+        <!-- END Logs Card -->
+
+      </div>
+      <!-- END COLUMN 1 -->
+
+      <!-- ======================== COLUMN 2 ======================== -->
+      <div class="col-span-12 lg:col-span-8 flex flex-col space-y-6">
+
+        <!-- Visualization Images -->
+        <div class="w-full p-4 md:p-6 bg-primary dark:bg-dark-primary rounded-2xl shadow-2xl border border-secondary dark:border-dark-secondary transition duration-300">
+          <h2 class="text-xl font-semibold text-text-main dark:text-dark-text-main mb-4">Visualizations</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="rounded-xl flex items-center justify-center h-48 bg-gray-100 dark:bg-dark-secondary">
+              <img src="../data/output/visualization_rgb.png"
+                class="w-full h-full object-cover rounded-xl"
+                onerror="this.style.opacity='0.2'" alt="RGB Visualization" />
+            </div>
+            <div class="rounded-xl flex items-center justify-center h-48 bg-gray-100 dark:bg-dark-secondary">
+              <img src="../data/output/visualization_probability.png"
+                class="w-full h-full object-cover rounded-xl"
+                onerror="this.style.opacity='0.2'" alt="Probability Visualization" />
+            </div>
+            <div class="rounded-xl flex items-center justify-center h-48 bg-gray-100 dark:bg-dark-secondary">
+              <img src="../data/output/visualization_overlay.png"
+                class="w-full h-full object-cover rounded-xl"
+                onerror="this.style.opacity='0.2'" alt="Overlay Visualization" />
+            </div>
+          </div>
+        </div>
+        <!-- END Visualizations -->
+
+        <!-- Lake Statistics + Map -->
+        <div class="w-full bg-primary dark:bg-dark-primary rounded-2xl shadow-xl border border-secondary dark:border-dark-secondary overflow-hidden flex flex-col lg:flex-row transition duration-300">
+
+          <!-- Stats -->
+          <div class="lg:w-2/5 p-6 lg:p-10 flex flex-col justify-center text-text-main dark:text-dark-text-main min-h-[450px]">
+            <h1 class="text-2xl font-mono dark:text-dark-text-main mb-8 leading-tight">
+              --- Lake Statistics ---
+            </h1>
+            <div class="space-y-4 text-lg font-semibold">
+              <p>
+                <span class="text-text-subtle dark:text-dark-text-subtle">Pixels &gt; 0.5: </span>
+                <span class="font-bold">1,044,334</span>
+              </p>
+              <p>
+                <span class="text-text-subtle dark:text-dark-text-subtle">Pixel area: </span>
+                <span class="font-bold">88.377 m²</span>
+              </p>
+              <p class="pt-4 border-t border-secondary dark:border-dark-secondary">
+                <span class="text-text-subtle dark:text-dark-text-subtle">Estimated total lake area: </span>
+                <span class="text-3xl text-accent-blue font-extrabold">92.295 km²</span>
+              </p>
+              <p>
+                <span class="text-text-subtle dark:text-dark-text-subtle">Lake coverage: </span>
+                <span class="font-bold">2.00%</span>
+              </p>
+            </div>
+            <div class="mt-auto pt-6">
+              <h2 class="text-xl font-mono text-text-main dark:text-dark-text-main">
+                --------------------------
+              </h2>
+            </div>
+          </div>
+          <!-- END Stats -->
+
+          <!-- Map image -->
+          <div class="lg:w-3/5 flex items-center justify-center relative p-8">
+            <div class="absolute inset-4 bg-gradient-to-br from-gray-800 to-gray-900 opacity-30 rounded-2xl"></div>
+            <img src="../contour_map/generated_maps/submission_combined_contour_lake_map-final.png"
+              class="w-full h-full object-cover rounded-xl"
+              onerror="this.style.opacity='0.2'" alt="Contour Lake Map" />
+          </div>
+          <!-- END Map -->
+
+        </div>
+        <!-- END Lake Statistics + Map -->
+
+      </div>
+      <!-- END COLUMN 2 -->
+
+    </div>
+    <!-- END Main Grid -->
+
+  </div>
+  <!-- END app -->
+
+  <script src="script.js"></script>
+</body>
+</html>

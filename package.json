@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "chokidar": "^5.0.0",
+    "electron": "^41.2.2"
+  }
+}
