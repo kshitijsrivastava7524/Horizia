@@ -1,7 +1,7 @@
 #library importing
 import ee
-
-GEE_FOLDER = 'GEE_Exports'
+import os 
+import requests
 
 #Authenticate and initialise Earth Engine
 try:
@@ -50,17 +50,24 @@ dem = dem.toFloat()
 # Stack bands (all float32)
 stack = s2.addBands(s1).addBands(dem)
 
+# Generate download URL
+url = stack.getDownloadURL({
+    'scale': 10,
+    'region': aoi,
+    'format': 'GEO_TIFF'
+})
 
-# Export to Google Drive
-task = ee.batch.Export.image.toDrive(
-    image=stack,
-    description='horizia_stack_export',
-    folder=GEE_FOLDER,
-    fileNamePrefix='horizia_stack',
-    scale=10,
-    region=aoi.getInfo()['coordinates'],
-    maxPixels=1e10
-)
-task.start()
+print("Download URL generated")
 
-print('Export started — check Google Drive', GEE_FOLDER)
+# Download locally
+output_path = "../data/raw/horizia_stack.tif"
+os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+response = requests.get(url, stream=True)
+
+with open(output_path, 'wb') as f:
+    for chunk in response.iter_content(chunk_size=1024):
+        if chunk:
+            f.write(chunk)
+
+print(f"File downloaded locally: {output_path}")

@@ -1,33 +1,147 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-
-//autoreload
-// const fs = require('fs');
+const { spawn } = require('child_process');
 const chokidar = require('chokidar');
 
+let mainWindow;
+const syncingSites = new Set(); // ✅ track per-site instead of one global flag
+const SYNC_TIMEOUT_MS = 5 * 60 * 1000;
+const VALID_SITES = ['site1', 'site2', 'site3', 'site4'];
 
+// ---------------- WINDOW ----------------
 function createWindow() {
-    const win = new BrowserWindow({
-        width: 1200,
-        height: 800,
-        show: false,
-        autoHideMenuBar: true
-    });
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    show: false,
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true
+    }
+  });
 
-    win.loadFile(path.join(__dirname, '../frontend/index-testing.html'));
-    win.setResizable(true);
+  mainWindow.loadFile(path.join(__dirname, '../frontend/index-testing.html'));
 
-    // Watch frontend folder
-    chokidar.watch(path.join(__dirname, '../frontend')).on('change', () => {
-        console.log("Reloading...");
-        win.webContents.reload();
-    });
+  const watcher = chokidar.watch(path.join(__dirname, '../frontend')).on('change', () => {
+    console.log("Reloading frontend...");
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.reload();
+    }
+  });
 
+  mainWindow.on('closed', () => {
+    watcher.close();
+    mainWindow = null;
+  });
 
-    win.maximize();
-    win.once('ready-to-show', () => {
-        win.show()
-    });
+  mainWindow.maximize();
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+  });
 }
 
 app.whenReady().then(createWindow);
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+});
+
+// ---------------- CONFIG ----------------
+const PYTHON_PATH =
+  process.env.PYTHON_PATH ||
+  'C:\\Users\\kshit\\miniconda3\\envs\\horizia\\python.exe';
+
+const SCRIPT_PATH = path.join(__dirname, '../backend/sync_pipeline.py');
+
+// ---------------- SYNC HANDLER ----------------
+ipcMain.handle('sync-data', async (_, site) => {
+
+  // ✅ Validate site
+  if (!VALID_SITES.includes(site)) {
+    return { status: 'error', message: `Invalid site: ${site}` };
+  }
+
+  // ✅ Per-site busy check
+  if (syncingSites.has(site)) {
+    return { status: 'busy', message: `${site} sync already running` };
+  }
+
+  syncingSites.add(site);
+
+  return new Promise((resolve) => {
+    // ✅ Pass site as argument to Python
+    const py = spawn(PYTHON_PATH, [SCRIPT_PATH, site]);
+
+    let logs = [];
+    let errors = [];
+    let resolved = false;
+
+    const resolveOnce = (value) => {
+      if (!resolved) {
+        resolved = true;
+        resolve(value);
+      }
+    };
+
+    const sendToFrontend = (channel, msg) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(channel, { site, msg });
+      }
+    };
+
+    const timeout = setTimeout(() => {
+      console.error(`Sync timed out for ${site}`);
+      py.kill();
+      syncingSites.delete(site);
+      resolveOnce({ status: 'error', site, message: 'Sync timed out' });
+    }, SYNC_TIMEOUT_MS);
+
+    py.stdout.on('data', (data) => {
+      const msg = data.toString();
+      console.log(`[PYTHON ${site}]: ${msg}`);
+      logs.push(msg);
+      sendToFrontend('sync-log', msg);
+    });
+
+    py.stderr.on('data', (data) => {
+      const err = data.toString();
+      const isWarning =
+        err.includes('FutureWarning') ||
+        err.includes('warnings.warn') ||
+        err.includes('DeprecationWarning') ||
+        err.includes('UserWarning');
+
+      if (isWarning) {
+        console.warn(`[PYTHON WARNING ${site}]: ${err}`);
+      } else {
+        console.error(`[PYTHON ERROR ${site}]: ${err}`);
+        errors.push(err);
+        sendToFrontend('sync-error', err);
+      }
+    });
+
+    py.on('close', (code) => {
+      clearTimeout(timeout);
+      syncingSites.delete(site);
+      console.log(`Python exited for ${site} with code ${code}`);
+
+      if (code === 0) {
+        resolveOnce({ status: 'success', site, message: `${site} sync completed`, logs });
+      } else {
+        resolveOnce({ status: 'error', site, message: `${site} failed with code ${code}`, errors, logs });
+      }
+    });
+
+    py.on('error', (err) => {
+      clearTimeout(timeout);
+      syncingImages.delete(site);
+      console.error(`Failed to start Python for ${site}:`, err);
+      resolveOnce({ status: 'error', site, message: 'Failed to start Python', error: err.message });
+    });
+  });
+});
