@@ -70,8 +70,7 @@ def fetch_and_process(site, date):
 
 
 def run_model(processed_path):
-    result = run_unet()
-
+    result = run_unet(stack_path=processed_path)
     return result
 
 
@@ -93,8 +92,11 @@ def sync_site(site):
     last_date = get_last_date(site)
 
     if last_date is None:
-        print("First run")
-        run_fetch_and_save(site, today)
+        print("First run — fetching historical data (15 dates, 14-day gaps)")
+        for i in range(15):
+            target_date = today - timedelta(days=i * 14)
+            print(f"  Fetching for {target_date.date()}")
+            run_fetch_and_save(site, target_date)
         return
 
     gap = (today - last_date).days

@@ -7,9 +7,10 @@ from tqdm import tqdm
 from model_train_unet_4 import UNet
 
 
-def main():
+def main(stack_path=None):
     # ---------- CONFIG ----------
-    STACK_PATH = "../data/processed/stack_normalized1.tif"
+    # STACK_PATH = "../data/processed/stack_normalized1.tif"
+    STACK_PATH = stack_path or "../data/processed/stack_normalized1.tif"
     MODEL_PATH = "../../models/horizia_unet_best.pth"
     OUT_PATH   = "../data/output/predicted_lake_prob1.tif"
     PATCH      = 256
