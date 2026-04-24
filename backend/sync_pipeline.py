@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from preprocess import normalize_stack
 from fetch_data import fetch_data_fun
 from run_model import main as run_unet
+from visualize import generate_images
 
 # ---------------- CONFIG ----------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -31,8 +32,10 @@ def save_data(site, date, result):
     site_path = os.path.join(DATA_DIR, site)
     os.makedirs(site_path, exist_ok=True)
     file_path = os.path.join(site_path, f"{date.strftime('%Y-%m-%d')}.json")
+
     with open(file_path, "w") as f:
-        json.dump(result, f)
+        json.dump(result, f, indent=2)
+
     print(f"[SAVE] {file_path}")
     cleanup(site)
 
@@ -50,11 +53,14 @@ def cleanup(site):
 def generate_dates(last_date, today):
     dates = []
     current = last_date + timedelta(days=STEP_DAYS)
+
     while current <= today:
         dates.append(current)
         current += timedelta(days=STEP_DAYS)
+
     if not dates or dates[-1].date() != today.date():
         dates.append(today)
+
     return dates
 
 
@@ -62,26 +68,49 @@ def generate_dates(last_date, today):
 
 def fetch_and_process(site, date):
     print(f"[FETCH] {site} {date.date()}")
+
     raw_path = fetch_data_fun(site, date)
+
     if raw_path:
         processed_path = normalize_stack(raw_path, site, date)
+        print(f"[PROCESSED] {processed_path}")
         return processed_path
+
     return None
 
 
-def run_model(processed_path):
-    result = run_unet(stack_path=processed_path)
+def run_model(processed_path, site, date):
+    result = run_unet(
+        stack_path=processed_path,
+        site=site,
+        date=date
+    )
     return result
 
 
 def run_fetch_and_save(site, date):
     processed_path = fetch_and_process(site, date)
+
     if processed_path:
-        result = run_model(processed_path)
-        save_data(site, date, result)
+        result = run_model(processed_path, site, date)
+
+        print(f"[OUTPUT] {result['prob_path']}")
+        print(f"[OUTPUT] {result['binary_path']}")
+
+        # Generate images
+        generate_images(
+            stack_path=processed_path,
+            prob_path=result["prob_path"],
+            binary_path=result["binary_path"],
+            site=site,
+            date=date
+        )
+
+        # Save metrics
+        save_data(site, date, result["metrics"])
+
     else:
         print(f"[SKIP] No data saved for {site} on {date.date()}")
-
 
 # ---------------- SYNC LOGIC ----------------
 
@@ -113,9 +142,11 @@ def sync_site(site):
     else:
         print("Large gap -> backfill")
         dates = generate_dates(last_date, today)
+
         if len(dates) > MAX_RECORDS:
             print(f"[WARN] {len(dates)} dates generated, trimming to last {MAX_RECORDS}")
             dates = dates[-MAX_RECORDS:]
+
         for d in dates:
             run_fetch_and_save(site, d)
 
@@ -125,7 +156,7 @@ def run_sync(sites):
         sync_site(site)
 
 
-# Accept site as command line argument, fallback to all sites
+# ---------- ENTRY POINT ----------
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         requested = sys.argv[1]

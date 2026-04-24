@@ -1,0 +1,127 @@
+<!-- Search -->
+<div id="search-container" class="relative">
+  <input type="text" id="search-input"
+    class="h-11 w-11 rounded-full bg-accent-blue text-dark-text-main outline-none focus:ring-2 focus:ring-blue-400 transition-[width,padding] duration-300 ease-in-out placeholder-transparent"
+    placeholder="Search city..." />
+  <button id="search-button"
+    class="absolute top-0 right-0 h-11 w-11 p-3 bg-accent-blue text-dark-text-main rounded-full hover:bg-opacity-80 transition flex items-center justify-center">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  </button>
+</div>
+
+
+
+
+
+
+
+
+
+<!-- Temperature row -->
+<div class="w-full flex flex-row items-center justify-between py-4">
+  <div class="text-6xl font-light text-text-main dark:text-dark-text-main">
+    <span id="temp-value">--</span>°C
+  </div>
+  <div class="flex flex-col text-lg font-medium pl-2 text-text-subtle dark:text-dark-text-subtle">
+    <span class="opacity-70">H <span id="temp-max">--</span>°</span>
+    <span class="opacity-70">L <span id="temp-min">--</span>°</span>
+  </div>
+  <div id="current-icon" class="text-8xl text-text-main dark:text-dark-text-main"></div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Condition + location -->
+<div class="text-left pb-4">
+  <div id="current-condition" class="text-base text-text-subtle dark:text-dark-text-subtle min-h-[1.5rem]">
+    Enter a city name
+  </div>
+  <div id="current-location" class="text-sm text-text-subtle dark:text-dark-text-subtle min-h-[1.25rem]">
+    to load weather data...
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+<!-- Chart Card -->
+<div
+  class="w-full p-4 md:p-6 bg-primary dark:bg-dark-primary rounded-2xl shadow-2xl border border-secondary dark:border-dark-secondary text-text-main dark:text-dark-text-main transition duration-300">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-xl font-semibold">Chart</h2>
+  </div>
+  <div class="h-60 mb-6 relative">
+    <canvas id="chartCanvas" class="rounded-lg w-full h-full"></canvas>
+  </div>
+  <div class="pt-4 border-t border-secondary dark:border-dark-secondary">
+    <p class="text-sm text-text-subtle dark:text-dark-text-subtle mb-1">Threshold</p>
+    <span class="text-4xl font-extrabold text-accent-blue">65</span>
+  </div>
+</div>
+<!-- END Chart Card -->
+
+<!-- Logs Card -->
+<div class="w-full p-4 bg-gray-900 rounded-2xl border border-gray-700">
+  <h2 class="text-lg font-semibold text-gray-100 mb-3">Logs</h2>
+  <div id="logs" class="text-sm font-mono text-gray-300 h-56 overflow-y-auto space-y-1"></div>
+</div>
+<!-- END Logs Card -->
+
+
+
+
+
+
+
+
+
+<!-- Stats -->
+<div class="lg:w-2/5 p-6 lg:p-10 flex flex-col justify-center text-text-main dark:text-dark-text-main min-h-[450px]">
+  <h1 class="text-2xl font-mono dark:text-dark-text-main mb-8 leading-tight">
+    --- Lake Statistics ---
+  </h1>
+  <div class="space-y-4 text-lg font-semibold">
+    <p>
+      <span class="text-text-subtle dark:text-dark-text-subtle">Pixels &gt; 0.5: </span>
+      <span class="font-bold">1,044,334</span>
+    </p>
+    <p>
+      <span class="text-text-subtle dark:text-dark-text-subtle">Pixel area: </span>
+      <span class="font-bold">88.377 m²</span>
+    </p>
+    <p class="pt-4 border-t border-secondary dark:border-dark-secondary">
+      <span class="text-text-subtle dark:text-dark-text-subtle">Estimated total lake area: </span>
+      <span class="text-3xl text-accent-blue font-extrabold">92.295 km²</span>
+    </p>
+    <p>
+      <span class="text-text-subtle dark:text-dark-text-subtle">Lake coverage: </span>
+      <span class="font-bold">2.00%</span>
+    </p>
+  </div>
+  <div class="mt-auto pt-6">
+    <h2 class="text-xl font-mono text-text-main dark:text-dark-text-main">
+      --------------------------
+    </h2>
+  </div>
+</div>
+<!-- END Stats -->

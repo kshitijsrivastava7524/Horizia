@@ -18,6 +18,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeListeners: () => {
     ipcRenderer.removeAllListeners('sync-log');
     ipcRenderer.removeAllListeners('sync-error');
-  }
+  },
+
+
+  getDates: (site) => ipcRenderer.invoke('get-dates', site),
+  getImagePath: (site, date, type) =>
+    ipcRenderer.invoke('get-image-path', site, date, type),
+  getMetrics: (site, date) =>
+    ipcRenderer.invoke('get-metrics', site, date)
 
 });

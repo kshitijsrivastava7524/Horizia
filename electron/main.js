@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const chokidar = require('chokidar');
+const fs = require('fs');
 
 let mainWindow;
 const syncingSites = new Set(); //  track per-site instead of one global flag
@@ -52,11 +53,14 @@ app.on('activate', () => {
 });
 
 // ---------------- CONFIG ----------------
-const PYTHON_PATH =
-  process.env.PYTHON_PATH ||
-  'C:\\Users\\kshit\\miniconda3\\envs\\horizia\\python.exe';
+const PYTHON_PATH = process.env.PYTHON_PATH || 'python';
+// const PYTHON_PATH = process.env.PYTHON_PATH || '../.venv/bin/python';
+//   'C:\\Users\\kshit\\miniconda3\\envs\\horizia\\python.exe' ||
+  
 
 const SCRIPT_PATH = path.join(__dirname, '../backend/sync_pipeline.py');
+
+
 
 // ---------------- SYNC HANDLER ----------------
 ipcMain.handle('sync-data', async (_, site) => {
@@ -144,4 +148,52 @@ ipcMain.handle('sync-data', async (_, site) => {
       resolveOnce({ status: 'error', site, message: 'Failed to start Python', error: err.message });
     });
   });
+});
+
+
+
+
+
+//---------get dates---------
+ipcMain.handle('get-dates', (event, site) => {
+  const basePath = path.join(__dirname, '../data/output/images', site);
+
+  if (!fs.existsSync(basePath)) return [];
+
+  return fs.readdirSync(basePath).filter(name => {
+    return fs.statSync(path.join(basePath, name)).isDirectory();
+  });
+});
+
+//---------get image paths---------
+ipcMain.handle('get-image-path', (event, site, date, type) => {
+  const fileMap = {
+    rgb: 'rgb.png',
+    prob: 'prob.png',
+    overlay: 'rgb-mask.png',
+    contour: 'contour-overlay.png'
+  };
+
+  return path.join(
+    __dirname,
+    '../data/output/images',
+    site,
+    date,
+    fileMap[type]
+  );
+});
+
+
+//---------get image paths---------
+ipcMain.handle('get-metrics', (event, site, date) => {
+  const filePath = path.join(
+    __dirname,
+    '../data/history',
+    site,
+    `${date}.json`
+  );
+
+  if (!fs.existsSync(filePath)) return null;
+
+  return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 });
