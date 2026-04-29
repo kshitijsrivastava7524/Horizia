@@ -10,6 +10,7 @@ from visualize import generate_images
 # ---------------- CONFIG ----------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "../data/history")
+STAGING_DIR = os.path.join(BASE_DIR, "../data/fetched_early")
 STEP_DAYS = 14
 FRESHNESS_THRESHOLD = 7
 MAX_RECORDS = 15
@@ -40,6 +41,15 @@ def save_data(site, date, result):
     cleanup(site)
 
 
+def save_staging(site, date, metrics):
+    path = os.path.join(STAGING_DIR, site)
+    os.makedirs(path, exist_ok=True)
+    file_path = os.path.join(path, f"{date.strftime('%Y-%m-%d')}.json")
+    with open(file_path, "w") as f:
+        json.dump(metrics, f, indent=2)
+    print(f"[STAGING] {file_path}")
+
+
 def cleanup(site):
     path = os.path.join(DATA_DIR, site)
     files = sorted([f for f in os.listdir(path) if f.endswith('.json')])
@@ -58,8 +68,8 @@ def generate_dates(last_date, today):
         dates.append(current)
         current += timedelta(days=STEP_DAYS)
 
-    if not dates or dates[-1].date() != today.date():
-        dates.append(today)
+    # if not dates or dates[-1].date() != today.date():
+    #     dates.append(today)
 
     return dates
 
@@ -86,6 +96,7 @@ def fetch_and_process(site, date):
 
     return None
 
+
 def run_fetch_and_save(site, date):
     processed_path = fetch_and_process(site, date)
 
@@ -110,6 +121,7 @@ def run_fetch_and_save(site, date):
     else:
         print(f"[SKIP] No data saved for {site} on {date.date()}")
 
+
 # ---------------- SYNC LOGIC ----------------
 
 def sync_site(site):
@@ -130,15 +142,25 @@ def sync_site(site):
     print(f"Gap: {gap} days")
 
     if gap <= FRESHNESS_THRESHOLD:
-        print("Fresh -> skip")
+        print("Fresh → skip")
         return
 
-    elif gap <= STEP_DAYS:
-        print("Small gap -> fetch today")
-        run_fetch_and_save(site, today)
+    elif gap < STEP_DAYS:
+        print("Small gap → fetch to staging")
+        processed_path = fetch_and_process(site, today)
+        if processed_path:
+            result = run_model(processed_path, site, today)
+            generate_images(
+                            stack_path=processed_path,
+                            prob_path=result["prob_path"],
+                            binary_path=result["binary_path"],
+                            site=site,
+                            date=today
+                        )
+            save_staging(site, today, result["metrics"])
 
     else:
-        print("Large gap -> backfill")
+        print("Large gap → backfill")
         dates = generate_dates(last_date, today)
 
         if len(dates) > MAX_RECORDS:
@@ -147,6 +169,21 @@ def sync_site(site):
 
         for d in dates:
             run_fetch_and_save(site, d)
+
+        if dates and dates[-1].date() != today.date():
+            print("Remainder gap → staging today")
+            processed_path = fetch_and_process(site, today)
+            if processed_path:
+                result = run_model(processed_path, site, today)
+                generate_images(
+                                stack_path=processed_path,
+                                prob_path=result["prob_path"],
+                                binary_path=result["binary_path"],
+                                site=site,
+                                date=today
+                            )
+                save_staging(site, today, result["metrics"])
+
 
 
 def run_sync(sites):
