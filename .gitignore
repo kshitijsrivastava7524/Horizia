@@ -12,9 +12,9 @@
 
 
 # # Ignore image files
-# *.jpeg
-# *.jpg
-# *.png
+*.jpeg
+*.jpg
+*.png
 
 # Node / Electron
 node_modules/

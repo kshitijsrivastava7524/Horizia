@@ -2,9 +2,11 @@ import os
 import torch
 import rasterio
 import numpy as np
+import sys
 from rasterio.windows import Window
 from tqdm import tqdm
 from model_train_unet_4 import UNet
+
 
 
 def main(stack_path=None, site=None, date=None):
@@ -49,7 +51,7 @@ def main(stack_path=None, site=None, date=None):
         H, W = src.height, src.width
         pred_mask = np.zeros((H, W), dtype="float32")
 
-        for y in tqdm(range(0, H, PATCH), desc="Predicting rows"):
+        for y in tqdm(range(0, H, PATCH), desc="Predicting rows", file=sys.stdout):
             for x in range(0, W, PATCH):
                 window = Window(x, y, PATCH, PATCH).intersection(Window(0, 0, W, H))
                 img = src.read(window=window).astype("float32")
