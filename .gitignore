@@ -11,10 +11,11 @@
 # datasets/
 
 
-# # Ignore image files
+# Ignore image files
 *.jpeg
 *.jpg
 *.png
+*.json
 
 # Node / Electron
 node_modules/
@@ -22,3 +23,6 @@ electron/node_modules/
 npm-debug.log*
 
 __pycache__/
+
+# block APIs and Emails from getting pushed to remote
+.env
