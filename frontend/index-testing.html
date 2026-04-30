@@ -31,6 +31,12 @@
       },
     };
   </script>
+
+  <!-- <style>
+    div {
+      outline: 1px solid red;
+    }
+  </style> -->
 </head>
 
 <body
@@ -40,27 +46,34 @@
 
 
     <!-- Loading Indicator -->
-    <div id="loading-indicator"
-      class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
+    <!-- <div id="loading-indicator"
+      class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center border-8">
       <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-accent-blue"></div>
       <p
         class="text-xl ml-4 bg-primary dark:bg-dark-primary text-text-main dark:text-dark-text-main rounded-2xl px-4 py-2">
         Loading weather data...
       </p>
-    </div>
+    </div> -->
 
     <!-- Main Grid -->
-    <div class="grid grid-cols-12 gap-4 items-start max-w-[1600px] mx-auto w-full">
+    <div class="grid grid-cols-12 gap-4 items-start max-w-[1600px] mx-auto w-full flex flex-col">
       <!-- ======================== CALENDAR PANEL ======================== -->
+      <!-- <div id="calendar-panel"
+        class="hidden col-span-12 lg:col-span-2 min-w-[180px] bg-primary dark:bg-dark-primary rounded-2xl shadow-xl border border-secondary dark:border-dark-secondary p-4"> -->
       <div id="calendar-panel"
-          class="hidden col-span-12 lg:col-span-2 min-w-[180px] bg-primary dark:bg-dark-primary rounded-2xl shadow-xl border border-secondary dark:border-dark-secondary p-4">
-
-        <h2 class="text-lg font-semibold mb-4 text-text-main dark:text-dark-text-main">
+          class="col-span-12 lg:col-span-2 min-w-[180px]
+                  bg-primary dark:bg-dark-primary
+                  rounded-2xl shadow-xl border border-secondary dark:border-dark-secondary
+                  p-4
+                  opacity-0 translate-x-4
+                  transition-all duration-300 ease-out
+                  pointer-events-none">
+        <h2 class="date-header text-lg font-semibold mb-4 text-text-main dark:text-dark-text-main">
           Dates
         </h2>
 
         <div id="date-list" class="flex flex-col gap-2 text-sm">
-          <!-- Dates will be injected here -->
+          <!-- Dates injected here -->
           <span class="text-gray-400">No site selected</span>
         </div>
 
@@ -68,14 +81,14 @@
       <!-- ======================== END CALENDAR ======================== -->
 
       <!-- ======================== COLUMN 1 ======================== -->
-      <div class="col-span-12 lg:col-span-3 flex flex-col space-y-4">
+      <div class="col-span-12 lg:col-span-3 flex flex-col space-y-4 h-full ">
 
-        <!-- Current Weather Card -->
+        <!-- Sites card -->
         <div
           class="w-full p-4 md:p-6 bg-primary dark:bg-dark-primary rounded-2xl shadow-2xl border border-secondary dark:border-dark-secondary text-text-main dark:text-dark-text-main transition duration-300">
-
-          <!-- Top bar: dark mode toggle + search -->
+          <!-- Top bar: dark mode toggle + Title -->
           <div class="w-full flex justify-between items-center mb-6">
+            <!-- dark mode toggle -->
             <button id="dark-mode-toggle"
               class="p-3 bg-secondary dark:bg-dark-secondary text-text-main dark:text-dark-text-main rounded-full hover:bg-opacity-80 transition flex items-center justify-center"
               title="Toggle Dark Mode">
@@ -86,108 +99,160 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M12 3v1M12 20v1M20.66 12h-1M3.34 12h1M17.78 6.22l-.7.7M6.22 17.78l-.7.7M17.78 17.78l-.7-.7M6.22 6.22l-.7-.7" />
               </svg>
+
               <!-- Moon -->
               <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
               </svg>
             </button>
-
-
-            <div id="search-container" class="relative">
+            <div id="title" class="relative">
               <h1 class="text-3xl text-center text-gray-100 dark:text-dark-text-main">Horizia</h1>
             </div>
-            <div><span></span></div>
-
+            <div><span></span></div> <!--centering the above div-->
           </div>
-
-
-
           <!-- Sync by Site -->
-          <div class="border-t border-secondary dark:border-dark-secondary pt-4">
-            <p class="text-sm font-medium text-text-subtle dark:text-dark-text-subtle mb-3">Sync by Site</p>
-            <div id="site-container" class="flex flex-wrap gap-2 h-full">
+          <div class="border-t">
+            <div class="p-2 flex flex-row justify-between w-full items-center">
 
+              <!-- Header -->
+              <div id="selected-site"
+                  class="text-sm font-medium text-text-subtle dark:text-dark-text-subtle flex flex-col items-start">
+
+                <div id="selected-site-name">Select Site</div>
+                <div id="selected-site-status" class="text-xs text-gray-400"></div>
+
+              </div>
+              <div class="flex items-center gap-2">
+                <!-- Sync Icon -->
+                <div id="sync-button"
+                    class="p-3 bg-secondary dark:bg-dark-secondary text-text-main dark:text-dark-text-main rounded-full hover:bg-opacity-80 transition flex justify-center cursor-pointer hidden"
+                    onclick="handleSync(event, selectedSite)"
+                    title="Sync">
+
+                  <svg id="sync-svg" viewBox="0 0 25 25" fill="none"
+                      class="w-4 h-4"
+                      xmlns="http://www.w3.org/2000/svg">
+
+                    <path d="M13.5 4.5H12.5C8.08172 4.5 4.5 8.08172 4.5 12.5C4.5 15.6631 6.33576 18.3975 9 19.6958M11.5 20.5H12.5C16.9183 20.5 20.5 16.9183 20.5 12.5C20.5 9.33688 18.6642 6.60253 16 5.30423"
+                          stroke="currentColor"
+                          stroke-width="2"/>
+
+                    <path d="M14 17.5619L11.5 20.5L14.5 23.0619M11 7.43811L13.5 4.50001L10.5 1.93811"
+                          stroke="currentColor"
+                          stroke-width="2"/>
+                  </svg>
+
+                </div>
+
+                <!-- Reload Icon -->
+                <div id="reload-button"
+                    class="p-3 bg-secondary dark:bg-dark-secondary text-text-main dark:text-dark-text-main rounded-full hover:bg-opacity-80 transition flex items-center justify-center cursor-pointer"
+                    onclick="handleReload(event)"
+                    title="Reload">
+                  <svg viewBox="0 0 48 48"
+                      class="w-4 h-4"
+                      fill="currentColor" 
+                      opacity="1.0"
+                      stroke="currentColor"
+                      xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10,22v2c0,7.72,6.28,14,14,14s14-6.28,14-14s-6.28-14-14-14h-4V4l-8,8l8,8v-6h4c5.514,0,10,4.486,10,10s-4.486,10-10,10 s-10-4.486-10-10v-2H10z"
+                          stroke-width="1"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Site Grid -->
+            <div id="site-container" class="grid grid-cols-2 grid-rows-2 gap-4 h-full">
               <!-- Site 1 -->
-              <div id="site-card-site1"
-                  onclick="selectSite('site1')"
-                  class="site-card bg-secondary dark:bg-dark-secondary rounded-xl p-4 flex flex-col justify-center items-center cursor-pointer hover:opacity-80 transition flex-1 basis-[48%]">
+              <div id="site-card-site1" onclick="selectSite('site1')"
+                class="site-card relative overflow-hidden rounded-xl cursor-pointer flex-1 basis-[48%] aspect-[4/3]">
 
-                <p class="text-text-main dark:text-dark-text-main font-semibold text-lg">
-                  SITE 1
-                </p>
+                <!-- Background Image -->
+                <img src="images/sites/site1.png" class="absolute inset-0 w-full h-full object-cover" />
 
-                <p class="text-text-subtle dark:text-dark-text-subtle text-sm">
-                  Click to view
-                </p>
+                <div class=" overlay absolute inset-0 bg-black/30"></div>
 
+                <!-- Content -->
+                <div class="site-content relative z-10 flex flex-col justify-start items-start h-full p-3">
+                  <p id="site-title-site1" class="text-white text-sm font-semibold leading-tight drop-shadow-md">
+                  </p>
+                </div>
               </div>
 
               <!-- Site 2 -->
-              <div id="site-card-site2"
-                  onclick="selectSite('site2')"
-                  class="site-card bg-secondary dark:bg-dark-secondary rounded-xl p-4 flex flex-col justify-center items-center cursor-pointer hover:opacity-80 transition flex-1 basis-[48%]">
+              <div id="site-card-site2" onclick="selectSite('site2')"
+                class="site-card relative overflow-hidden rounded-xl cursor-pointer flex-1 basis-[48%] aspect-[4/3]">
 
-                <p class="text-text-main dark:text-dark-text-main font-semibold text-lg">
-                  SITE 2
-                </p>
+                <!-- Background Image -->
+                <img src="images/sites/site2.png" class="absolute inset-0 w-full h-full object-cover" />
 
-                <p class="text-text-subtle dark:text-dark-text-subtle text-sm">
-                  Click to view
-                </p>
+                <div class="overlay absolute inset-0 bg-black/30"></div>
+                <!-- Content -->
+                <div class="site-content relative z-10 flex flex-col justify-start items-start h-full p-3">
+                  <p id="site-title-site2" class="text-white text-sm font-semibold leading-tight drop-shadow-md">
+                  </p>
+                </div>
 
               </div>
 
               <!-- Site 3 -->
-              <div id="site-card-site3"
-                  onclick="selectSite('site3')"
-                  class="site-card bg-secondary dark:bg-dark-secondary rounded-xl p-4 flex flex-col justify-center items-center cursor-pointer hover:opacity-80 transition flex-1 basis-[48%]">
+              <div id="site-card-site3" onclick="selectSite('site3')"
+                class="site-card relative overflow-hidden rounded-xl cursor-pointer flex-1 basis-[48%] aspect-[4/3]">
 
-                <p class="text-text-main dark:text-dark-text-main font-semibold text-lg">
-                  SITE 3
-                </p>
+                <!-- Background Image -->
+                <img src="images/sites/site3.png" class="absolute inset-0 w-full h-full object-cover" />
 
-                <p class="text-text-subtle dark:text-dark-text-subtle text-sm">
-                  Click to view
-                </p>
-
+                <div class="overlay absolute inset-0 bg-black/30"></div>
+                <!-- Content -->
+                <div class="site-content relative z-10 flex flex-col justify-start items-start h-full p-3">
+                  <p id="site-title-site3" class="text-white text-sm font-semibold leading-tight drop-shadow-md">
+                  </p>
+                </div>
               </div>
 
               <!-- Site 4 -->
-              <div id="site-card-site4"
-                  onclick="selectSite('site4')"
-                  class="site-card bg-secondary dark:bg-dark-secondary rounded-xl p-4 flex flex-col justify-center items-center cursor-pointer hover:opacity-80 transition flex-1 basis-[48%]">
+              <div id="site-card-site4" onclick="selectSite('site4')"
+                class="site-card relative overflow-hidden rounded-xl cursor-pointer flex-1 basis-[48%] aspect-[4/3]">
 
-                <p class="text-text-main dark:text-dark-text-main font-semibold text-lg">
-                  SITE 4
-                </p>
+                <!-- Background Image -->
+                <img src="images/sites/site4.png" class="absolute inset-0 w-full h-full object-cover" />
 
-                <p class="text-text-subtle dark:text-dark-text-subtle text-sm">
-                  Click to view
-                </p>
+                <div class="overlay absolute inset-0 bg-black/30"></div>
+                <!-- Content -->
+                <div class="site-content relative z-10 flex flex-col justify-start items-start h-full p-3">
+                  <p id="site-title-site4" class="text-white text-sm font-semibold leading-tight drop-shadow-md">
+                  </p>
+                </div>
 
               </div>
 
             </div>
           </div>
         </div>
-        <!-- END Sync by Site -->
+
         <!-- Chart Card -->
         <div
           class="w-full p-4 md:p-6 bg-primary dark:bg-dark-primary rounded-2xl shadow-2xl border border-secondary dark:border-dark-secondary text-text-main dark:text-dark-text-main transition duration-300">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold">Chart</h2>
+            <h2 class="text-xl font-semibold">Water Coverage</h2>
           </div>
           <div class="h-[240px] mb-6 relative flex items-stretch">
             <canvas id="chartCanvas" class="rounded-lg w-full" style="height: 240px;"></canvas>
           </div>
-          <!-- <div class="pt-4 border-t border-secondary dark:border-dark-secondary">
-            <p class="text-sm text-text-subtle dark:text-dark-text-subtle mb-1">Threshold</p>
-            <span class="text-4xl font-extrabold text-accent-blue">65</span>
-          </div> -->
         </div>
         <!-- END Chart Card -->
 
+        <!-- CONSOLE (add "hidden" to the class to hide the console)-->
+        <div class="hidden w-full p-4 md:p-6 bg-primary dark:bg-dark-primary rounded-2xl shadow-2xl border border-secondary dark:border-dark-secondary text-text-main dark:text-dark-text-main transition duration-300">
+          <h2 class="text-xl font-semibold mb-2">Console</h2>
+          <div id="logs"
+              class="flex flex-col gap-1 max-h-60 overflow-y-auto text-sm font-mono bg-black/40 rounded-lg p-2">
+          </div>
+        </div>
 
         <!-- END Weather Card -->
 
@@ -202,19 +267,22 @@
           class="w-full p-4 md:p-6 bg-primary dark:bg-dark-primary rounded-2xl shadow-2xl border flex flex-col  dark:border-dark-secondary transition duration-300 max-h-[355px]">
           <h2 class="text-xl font-semibold text-text-main dark:text-dark-text-main mb-4">Visualizations</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
-            <div class="viz-card relative rounded-xl flex items-center justify-center w-full aspect-square bg-gray-100 dark:bg-dark-secondary max-w-[240px]">
+            <div
+              class="viz-card relative rounded-xl flex items-center justify-center w-full aspect-square bg-gray-100 dark:bg-dark-secondary max-w-[240px]">
               <img id="img-rgb" class="w-full h-full rounded-xl hidden" />
               <span id="rgb-placeholder" class="placeholder text-sm text-gray-400 absolute">No data</span>
             </div>
 
-            <div class="viz-card relative rounded-xl flex items-center justify-center w-full aspect-square bg-gray-100 dark:bg-dark-secondary max-w-[240px]">
+            <div
+              class="viz-card relative rounded-xl flex items-center justify-center w-full aspect-square bg-gray-100 dark:bg-dark-secondary max-w-[240px]">
               <img id="img-prob" class="w-full h-full rounded-xl hidden" />
-              <span id="prob-placeholder"class="placeholder text-sm text-gray-400 absolute">No data</span>
+              <span id="prob-placeholder" class="placeholder text-sm text-gray-400 absolute">No data</span>
             </div>
 
-            <div class="viz-card relative rounded-xl flex items-center justify-center w-full aspect-square bg-gray-100 dark:bg-dark-secondary max-w-[240px]">
+            <div
+              class="viz-card relative rounded-xl flex items-center justify-center w-full aspect-square bg-gray-100 dark:bg-dark-secondary max-w-[240px]">
               <img id="img-overlay" class="w-full h-full rounded-xl hidden" />
-              <span id="overlay-placeholder"class="placeholder text-sm text-gray-400 absolute">No data</span>
+              <span id="overlay-placeholder" class="placeholder text-sm text-gray-400 absolute">No data</span>
             </div>
           </div>
         </div>
@@ -233,11 +301,15 @@
             <div id="stats-content" class="text-left text-lg text-text-main dark:text-dark-text-main space-y-2">
               Select a site to view data
             </div>
-            <div class="mt-auto pt-6">
-              <h2 class="text-xl font-mono text-text-main dark:text-dark-text-main">
-                ------------------------
-              </h2>
+
+            <!-- threshold -->
+            <div id="threshold-status-container" class="mt-auto pt-6">
+              <div id="threshold-status"
+                  class="w-full p-3 rounded-lg text-sm font-semibold text-center
+                          bg-transparent text-transparent border border-transparent">
+              </div>
             </div>
+
           </div>
           <!-- END Stats -->
 
@@ -253,15 +325,13 @@
 
 
           <div class="lg:w-3/5 flex items-center justify-center relative mt-6 lg:mt-0 p-8 max-w-[600px]">
-            <div
-                class="absolute inset-4 bg-gradient-to-br from-gray-800 to-gray-900 opacity-30 rounded-2xl">
+            <div class="absolute inset-4 bg-gradient-to-br from-gray-800 to-gray-900 opacity-30 rounded-2xl">
             </div>
             <img id="img-contour" class="w-full h-full object-cover rounded-xl hidden" />
-            <div id="contour-placeholder"
-                class="absolute inset-0 flex items-center justify-center text-gray-400">
+            <div id="contour-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-400">
               No data selected
             </div>
-        </div>
+          </div>
           <!-- END Map -->
 
         </div>

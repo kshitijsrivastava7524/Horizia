@@ -1,6 +1,21 @@
-// =============================
-// SYNC
-// =============================
+
+// ========================
+// AOI CONFIG AND SITES(FROM PYTHON)
+// ========================
+const SITES_CONFIG = {
+  site1: [[88.03, 27.72],[88.06, 27.72],[88.06, 27.75],[88.03, 27.75],[88.03, 27.72]],
+  site2: [[88.68, 28.03],[88.72, 28.03],[88.72, 28.07],[88.68, 28.07],[88.68, 28.03]],
+  site3: [[79.05, 30.72],[79.08, 30.72],[79.08, 30.75],[79.05, 30.75],[79.05, 30.72]],
+  site4: [[86.92, 27.87],[86.96, 27.87],[86.96, 27.91],[86.92, 27.91],[86.92, 27.87]],
+};
+
+const SITE_NAMES = {
+  site1: "Lhonak Valley (Sikkim)",
+  site2: "Gurudongmar–Khangchung",
+  site3: "Chorabari Tal (Kedarnath)",
+  site4: "Imja Tsho (Nepal)"
+};
+
 let selectedSite = null;
 let selectedDate = null;
 
@@ -8,10 +23,24 @@ let isFetchingWeather = false;
 const syncingStates = {}; // track per-site button state
 
 
+function initSites() {
+  Object.entries(SITE_NAMES).forEach(([siteKey, siteName]) => {
+    const el = document.getElementById(`site-title-${siteKey}`);
+    if (el) {
+      el.textContent = siteName;
+    }
+  });
+}
+
+window.addEventListener("DOMContentLoaded", initSites);
+
 //site selection
 function selectSite(site) {
   selectedSite = site;
   selectedDate = null;
+
+  const name = SITE_NAMES[site] || site;
+  document.getElementById("selected-site-name").textContent = name;
 
   console.log("Selected site:", site);
 
@@ -19,14 +48,27 @@ function selectSite(site) {
   const panel = document.getElementById("calendar-panel");
   panel.classList.remove("hidden");
 
+  //show sync icon
+  document.getElementById("sync-button")?.classList.remove("hidden");
+
+  const activeCard = document.getElementById(`site-card-${site}`);
+  activeCard.querySelector(".overlay")?.classList.add("hidden");
+  activeCard.querySelector(".site-content")?.classList.add("hidden");
+
   loadDatesForSite(site);
   expandSiteCard(site);
   drawChartForSite();
+  updateThresholdStatus();
 }
 
 //expand site on selection
 function expandSiteCard(site) {
   const allCards = document.querySelectorAll(".site-card");
+  const container = document.getElementById("site-container");
+
+  container.classList.remove("grid", "grid-cols-2", "grid-rows-2", "gap-4");
+  container.classList.add("flex");
+  showCalendar();
 
   allCards.forEach(card => {
     if (card.id === `site-card-${site}`) {
@@ -35,6 +77,19 @@ function expandSiteCard(site) {
       card.classList.add("hidden");
     }
   });
+}
+
+//calendar
+function showCalendar() {
+  const panel = document.getElementById("calendar-panel");
+
+  panel.classList.remove("opacity-0", "translate-x-4", "pointer-events-none");
+}
+
+function hideCalendar() {
+  const panel = document.getElementById("calendar-panel");
+
+  panel.classList.add("opacity-0", "translate-x-4", "pointer-events-none");
 }
 
 async function loadDatesForSite(site) {
@@ -84,16 +139,6 @@ async function loadDatesForSite(site) {
 
 
 // ========================
-// AOI CONFIG (FROM PYTHON)
-// ========================
-const SITES_CONFIG = {
-  site1: [[88.03, 27.72],[88.06, 27.72],[88.06, 27.75],[88.03, 27.75],[88.03, 27.72]],
-  site2: [[88.68, 28.03],[88.72, 28.03],[88.72, 28.07],[88.68, 28.07],[88.68, 28.03]],
-  site3: [[79.05, 30.72],[79.08, 30.72],[79.08, 30.75],[79.05, 30.75],[79.05, 30.72]],
-  site4: [[86.92, 27.87],[86.96, 27.87],[86.96, 27.91],[86.92, 27.91],[86.92, 27.87]],
-};
-
-// ========================
 // AREA CALCULATION (KM²)
 // ========================
 
@@ -137,7 +182,7 @@ async function loadImagesForSelection() {
   // Hide ALL placeholders when images load
   document.getElementById("rgb-placeholder")?.classList.add("hidden");
   document.getElementById("prob-placeholder")?.classList.add("hidden");
-  document.getElementById("-placeholder")?.classList.add("hidden");
+  document.getElementById("overlay-placeholder")?.classList.add("hidden");
 
   // ========================
   // LOAD IMAGES
@@ -259,75 +304,111 @@ if (prevDate) {
   }
 }
 
-  function appendLog(logsDiv, line) {
-    logsDiv.appendChild(line);
-    while (logsDiv.children.length > 200) {
-      logsDiv.removeChild(logsDiv.firstChild);
+function handleReload(e) {
+  e.stopPropagation();
+
+  const app = document.body;
+  hideCalendar();
+  // app.style.transition = "opacity 100ms ease, transform 300ms ease";
+  // app.style.opacity = "0";
+  // app.style.transform = "scale(0.98)";
+
+  setTimeout(() => {
+    location.reload();
+  }, 200);
+}
+
+//sync function
+
+function handleSync(e, site) {
+  e.stopPropagation();
+  if (!site) {
+    console.warn("No site selected");
+    return;
+  }
+  startSync(site);
+}
+
+async function startSync(site) {
+  const statusLabel = document.getElementById("selected-site-status");
+  const btn = document.getElementById(`sync-button`);
+
+  if (syncingStates[site]) return;
+  syncingStates[site] = true;
+
+  if (statusLabel) statusLabel.innerText = "Syncing...";
+  if (btn) {
+    btn.classList.add("opacity-50", "pointer-events-none");
+  }
+  const svg = document.getElementById("sync-svg");
+  svg.classList.add("animate-spin");
+
+  try {
+    const result = await window.electronAPI.syncData(site);
+
+    if (result.status === "success") {
+      if (statusLabel) statusLabel.innerText = "Up to date";
+      await loadDatesForSite(site);
+    } else if (result.status === "busy") {
+      if (statusLabel) statusLabel.innerText = "Already running";
+    } else {
+      if (statusLabel) statusLabel.innerText = `Error: ${result.message}`;
     }
-    logsDiv.scrollTop = logsDiv.scrollHeight;
-  }
 
-  async function startSync(site) {
-    const statusEl = document.getElementById(`status-${site}`);
-    const btnEl = document.getElementById(`sync-btn-${site}`);
-
-    if (syncingStates[site]) return;
-    syncingStates[site] = true;
-
-    if (statusEl) statusEl.innerText = "Syncing...";
-    if (btnEl) btnEl.disabled = true;
-
-    try {
-      const result = await window.electronAPI.syncData(site);
-
-      if (result.status === "success") {
-        if (statusEl) statusEl.innerText = "Up to date";
-      } else if (result.status === "busy") {
-        if (statusEl) statusEl.innerText = "Already running";
-      } else {
-        if (statusEl) statusEl.innerText = `Error: ${result.message}`;
-      }
-
-    } catch (err) {
-      console.error(err);
-      if (statusEl) statusEl.innerText = "Failed";
-    } finally {
-      syncingStates[site] = false;
-      if (btnEl) btnEl.disabled = false;
+  } catch (err) {
+    console.error(err);
+    if (statusLabel) statusLabel.innerText = "Failed";
+  } finally {
+    syncingStates[site] = false;
+    svg.classList.remove("animate-spin");
+    if (btn) {
+      btn.classList.remove("opacity-50", "pointer-events-none");
     }
   }
+}
 
-  if (window.electronAPI) {
-    window.electronAPI.onLog(({ site, msg }) => {
-      console.log(`LOG [${site}]:`, msg);
-      const logsDiv = document.getElementById("logs");
-      if (logsDiv) {
-        const line = document.createElement("div");
-        line.textContent = `[${site}] ${msg}`;
-        appendLog(logsDiv, line);
-      }
-    });
-
-    window.electronAPI.onError(({ site, msg }) => {
-      console.error(`ERROR [${site}]:`, msg);
-      const logsDiv = document.getElementById("logs");
-      if (logsDiv) {
-        const line = document.createElement("div");
-        line.textContent = `ERROR [${site}]: ${msg}`;
-        line.style.color = "#f87171";
-        appendLog(logsDiv, line);
-      }
-    });
+//logger
+function appendLog(logsDiv, line) {
+  logsDiv.appendChild(line);
+  while (logsDiv.children.length > 200) {
+    logsDiv.removeChild(logsDiv.firstChild);
   }
+  logsDiv.scrollTop = logsDiv.scrollHeight;
+}
 
-  window.addEventListener('beforeunload', () => {
-    if (window.electronAPI) window.electronAPI.removeListeners();
+
+
+if (window.electronAPI) {
+  window.electronAPI.onLog(({ site, msg }) => {
+    const logsDiv = document.getElementById("logs");
+    console.log("logsDiv:", logsDiv);
+    if (logsDiv) {
+      const line = document.createElement("div");
+      line.className = "text-gray-200";
+      line.textContent = `[${site}] ${msg}`;
+
+      appendLog(logsDiv, line);
+    }
   });
 
+  window.electronAPI.onError(({ site, msg }) => {
+    console.error(`ERROR [${site}]:`, msg);
+    const logsDiv = document.getElementById("logs");
+    console.log("logsDiv:", logsDiv);
+    if (logsDiv) {
+      const line = document.createElement("div");
+      line.className = "text-red-400";
+      line.textContent = `ERROR [${site}]: ${msg}`;
+      line.style.color = "#f87171";
+      appendLog(logsDiv, line);
+    }
+  });
+}
 
-  // =============================
-  // CHART LOGIC
-  // =============================
+window.addEventListener('beforeunload', () => {
+  if (window.electronAPI) window.electronAPI.removeListeners();
+});
+
 
 // =============================
 // CHART LOGIC (FINAL)
@@ -486,73 +567,27 @@ async function drawChartForSite() {
     }
   });
 
+//threshold
+function updateThresholdStatus() {
+  const el = document.getElementById("threshold-status");
+  isDanger = calculateThreshold();
+  
+  if (isDanger) {
+    el.textContent = "DANGER";
+    el.className = `
+      w-full p-3 rounded-lg text-sm font-semibold text-center
+      bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse
+    `;
+  } else {
+    el.textContent = "SAFE";
+    el.className = `
+      w-full p-3 rounded-lg text-sm font-semibold text-center
+      bg-green-500/20 text-green-400 border border-green-500/30
+    `;
+  }
+}
 
-  // =============================
-  // WEATHER SEARCH
-  // =============================
 
-  document.addEventListener('DOMContentLoaded', () => {
-
-    const API_KEY = process.env.OWM_API_KEY || "YOUR_API_KEY";
-
-    const searchInput = document.getElementById('search-input');
-    const searchButton = document.getElementById('search-button');
-    const loading = document.getElementById('loading-indicator');
-
-    const temp = document.getElementById('temp-value');
-    const max = document.getElementById('temp-max');
-    const min = document.getElementById('temp-min');
-    const cond = document.getElementById('current-condition');
-    const loc = document.getElementById('current-location');
-    const icon = document.getElementById('current-icon');
-
-    function updateUI(data) {
-      temp.textContent = Math.round(data.main.temp);
-      max.textContent = Math.round(data.main.temp_max);
-      min.textContent = Math.round(data.main.temp_min);
-      cond.textContent = data.weather[0].description;
-      loc.textContent = `${data.name}, ${data.sys.country}`;
-      icon.innerHTML = `<img src="https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png" alt="weather icon">`;
-    }
-
-    async function searchCity() {
-      if (isFetchingWeather) return;
-      const q = searchInput.value.trim();
-      if (!q) return;
-
-      isFetchingWeather = true;
-      loading.classList.remove('hidden');
-
-      try {
-        const geo = await fetch(
-          `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(q)}&limit=1&appid=${API_KEY}`
-        );
-        if (!geo.ok) throw new Error("Geocoding request failed");
-        const geoData = await geo.json();
-        if (!geoData.length) throw new Error("City not found");
-
-        const { lat, lon } = geoData[0];
-
-        const weather = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
-        );
-        if (!weather.ok) throw new Error("Weather request failed");
-        const data = await weather.json();
-
-        updateUI(data);
-
-      } catch (e) {
-        alert(e.message);
-      } finally {
-        isFetchingWeather = false;
-        loading.classList.add('hidden');
-      }
-    }
-
-    if (searchButton) searchButton.addEventListener('click', searchCity);
-    if (searchInput) {
-      searchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') searchCity();
-      });
-    }
-  });
+function calculateThreshold() {
+  return false; // always SAFE for now (return true for DANGER and false for SAFE)
+}

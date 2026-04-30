@@ -58,7 +58,7 @@ const PYTHON_PATH = process.env.PYTHON_PATH || 'python';
 //   'C:\\Users\\kshit\\miniconda3\\envs\\horizia\\python.exe' ||
   
 
-const SCRIPT_PATH = path.join(__dirname, '../backend/sync_pipeline.py');
+const SCRIPT_PATH = path.join(__dirname, '../backend/test.py');
 
 
 
