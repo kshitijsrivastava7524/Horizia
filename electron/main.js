@@ -184,16 +184,24 @@ ipcMain.handle('get-image-path', (event, site, date, type) => {
 });
 
 
-//---------get image paths---------
-ipcMain.handle('get-metrics', (event, site, date) => {
-  const filePath = path.join(
-    __dirname,
-    '../data/history',
-    site,
-    `${date}.json`
-  );
+//---------get metric paths---------
+iipcMain.handle('get-metrics', (event, site, date) => {
+  const baseDir = path.join(__dirname, '../data');
 
-  if (!fs.existsSync(filePath)) return null;
+  const possibleDirs = ['history', 'fetched_early'];
 
-  return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  for (const dir of possibleDirs) {
+    const filePath = path.join(
+      baseDir,
+      dir,
+      site,
+      `${date}.json`
+    );
+
+    if (fs.existsSync(filePath)) {
+      return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    }
+  }
+
+  return null;
 });
