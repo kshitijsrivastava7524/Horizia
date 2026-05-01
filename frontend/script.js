@@ -588,5 +588,5 @@ function updateThresholdStatus() {
 }
 
 function calculateThreshold() {
-  return true; // always SAFE for now (return true for DANGER and false for SAFE)
+  return false; // always SAFE for now (return true for DANGER and false for SAFE)
 }
