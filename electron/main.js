@@ -185,7 +185,7 @@ ipcMain.handle('get-image-path', (event, site, date, type) => {
 
 
 //---------get metric paths---------
-iipcMain.handle('get-metrics', (event, site, date) => {
+ipcMain.handle('get-metrics', (event, site, date) => {
   const baseDir = path.join(__dirname, '../data');
 
   const possibleDirs = ['history', 'fetched_early'];
