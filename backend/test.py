@@ -142,11 +142,11 @@ def sync_site(site):
     print(f"Gap: {gap} days")
 
     if gap <= FRESHNESS_THRESHOLD:
-        print("Fresh → skip")
+        print("Fresh -> skip")
         return
 
     elif gap < STEP_DAYS:
-        print("Small gap → fetch to staging")
+        print("Small gap -> fetch to staging")
         processed_path = fetch_and_process(site, today)
         if processed_path:
             result = run_model(processed_path, site, today)
@@ -160,7 +160,7 @@ def sync_site(site):
             save_staging(site, today, result["metrics"])
 
     else:
-        print("Large gap → backfill")
+        print("Large gap -> backfill")
         dates = generate_dates(last_date, today)
 
         if len(dates) > MAX_RECORDS:
@@ -171,7 +171,7 @@ def sync_site(site):
             run_fetch_and_save(site, d)
 
         if dates and dates[-1].date() != today.date():
-            print("Remainder gap → staging today")
+            print("Remainder gap -> staging today")
             processed_path = fetch_and_process(site, today)
             if processed_path:
                 result = run_model(processed_path, site, today)

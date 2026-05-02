@@ -38,6 +38,7 @@ window.addEventListener("DOMContentLoaded", initSites);
 function selectSite(site) {
   selectedSite = site;
   selectedDate = null;
+  document.getElementById("risk-button")?.classList.remove("hidden");
 
   const name = SITE_NAMES[site] || site;
   document.getElementById("selected-site-name").textContent = name;
@@ -589,4 +590,56 @@ function updateThresholdStatus() {
 
 function calculateThreshold() {
   return false; // always SAFE for now (return true for DANGER and false for SAFE)
+}
+
+
+async function handleRisk(e, site) {
+  e.stopPropagation();
+
+  if (!site) return;
+
+  const statusLabel = document.getElementById("selected-site-status");
+  const btn = document.getElementById("risk-button");
+
+  // prevent spam clicks
+  if (btn) btn.classList.add("opacity-50", "pointer-events-none");
+
+  if (statusLabel) statusLabel.innerText = "Evaluating risk...";
+
+  try {
+    const result = await window.electronAPI.evaluateRisk(site);
+
+    if (result.status === "success") {
+
+      const logText = result.logs.join("");
+
+      let level = "LOW";
+
+      if (logText.includes("HIGH")) level = "HIGH";
+      else if (logText.includes("MEDIUM")) level = "MEDIUM";
+
+      // update UI with colors
+      if (statusLabel) {
+        if (level === "HIGH") {
+          statusLabel.innerText = "HIGH RISK 🔴";
+          statusLabel.style.color = "#ef4444";
+        } else if (level === "MEDIUM") {
+          statusLabel.innerText = "MEDIUM RISK 🟡";
+          statusLabel.style.color = "#facc15";
+        } else {
+          statusLabel.innerText = "LOW RISK 🟢";
+          statusLabel.style.color = "#22c55e";
+        }
+      }
+
+    } else {
+      statusLabel.innerText = "Risk failed ❌";
+    }
+
+  } catch (err) {
+    console.error(err);
+    statusLabel.innerText = "Error ❌";
+  } finally {
+    if (btn) btn.classList.remove("opacity-50", "pointer-events-none");
+  }
 }

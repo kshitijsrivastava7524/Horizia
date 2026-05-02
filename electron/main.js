@@ -205,3 +205,39 @@ ipcMain.handle('get-metrics', (event, site, date) => {
 
   return null;
 });
+
+ipcMain.handle('evaluate-risk', async (_, site) => {
+  if (!VALID_SITES.includes(site)) {
+    return { status: 'error', message: `Invalid site: ${site}` };
+  }
+
+  return new Promise((resolve) => {
+    const py = spawn(PYTHON_PATH, [
+      path.join(__dirname, '../backend/evaluate_risk.py'),
+      site
+    ]);
+
+    let logs = [];
+    let errors = [];
+
+    py.stdout.on('data', (data) => {
+      const msg = data.toString();
+      console.log(`[RISK ${site}]: ${msg}`);
+      logs.push(msg);
+    });
+
+    py.stderr.on('data', (data) => {
+      const err = data.toString();
+      console.error(`[RISK ERROR ${site}]: ${err}`);
+      errors.push(err);
+    });
+
+    py.on('close', (code) => {
+      if (code === 0) {
+        resolve({ status: 'success', logs });
+      } else {
+        resolve({ status: 'error', errors });
+      }
+    });
+  });
+});

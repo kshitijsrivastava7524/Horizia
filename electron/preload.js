@@ -20,10 +20,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('sync-error');
   },
 
+  evaluateRisk: (site) => ipcRenderer.invoke('evaluate-risk', site),
 
   getDates: (site) => ipcRenderer.invoke('get-dates', site),
+
   getImagePath: (site, date, type) =>
     ipcRenderer.invoke('get-image-path', site, date, type),
+
   getMetrics: (site, date) =>
     ipcRenderer.invoke('get-metrics', site, date)
 
