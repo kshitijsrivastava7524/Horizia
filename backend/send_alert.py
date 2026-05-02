@@ -1,6 +1,8 @@
 import os
 import requests
 from dotenv import load_dotenv
+import sys
+import json
 
 load_dotenv()
 
@@ -41,14 +43,30 @@ def send_email(subject, message):
 
     response = requests.post(url, headers=headers, json=payload)
 
-    print("Status:", response.status_code)
-    if response.status_code != 202:
-        print("Error:", response.text)
+    # print("Status:", response.status_code)
+    # if response.status_code != 202:
+    #     print("Error:", response.text)
 
 
 # ---------- Example usage ----------
 if __name__ == "__main__":
-    send_email(
-        subject="Horizia: ALERT!!",
-        message="Test Email :)"
-    )
+    try:
+        site = sys.argv[1]
+        level = sys.argv[2]
+
+        send_email(
+            subject=f"Horizia ALERT: {site} {level}",
+            message=f"""
+                Site: {site}
+                Risk Level: {level}
+                """
+        )
+
+        print(json.dumps({"status": "success"}))
+
+    except Exception as e:
+        print(json.dumps({
+            "status": "error",
+            "message": str(e)
+        }))
+        sys.exit(1)
