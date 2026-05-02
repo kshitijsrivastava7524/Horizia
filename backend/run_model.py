@@ -12,7 +12,7 @@ from model_train_unet_4 import UNet
 def main(stack_path=None, site=None, date=None):
     # ---------- CONFIG ----------
     STACK_PATH = stack_path or "../data/processed/stack_normalized1.tif"
-    MODEL_PATH = "../models/horizia_unet_best.pth"
+    MODEL_PATH = "../models/horizia_unet_final.pth"
     PATCH      = 256
     THRESH     = 0.5
     # -----------------------------

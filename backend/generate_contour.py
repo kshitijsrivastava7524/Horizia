@@ -115,5 +115,5 @@ def generate_contour(site):
 
     cv2.imwrite(out_path, img)
 
-    print(f"[DONE] contour → {out_path}")
+    print(f"[DONE] contour -> {out_path}")
     return out_path

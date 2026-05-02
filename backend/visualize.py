@@ -116,4 +116,4 @@ def create_contour_overlay(site, date):
 
     cv2.imwrite(out_path, contour)
 
-    print(f"[DONE] contour overlay → {out_path}")
+    print(f"[DONE] contour overlay -> {out_path}")
