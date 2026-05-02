@@ -1,0 +1,12 @@
+numpy
+torch
+torchvision
+rasterio
+opencv-python
+Pillow
+tqdm
+requests
+python-dotenv
+earthengine-api
+scipy
+gdal
