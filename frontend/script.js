@@ -3,10 +3,10 @@
 // AOI CONFIG AND SITES(FROM PYTHON)
 // ========================
 const SITES_CONFIG = {
-  site1: [[88.03, 27.72],[88.06, 27.72],[88.06, 27.75],[88.03, 27.75],[88.03, 27.72]],
-  site2: [[88.68, 28.03],[88.72, 28.03],[88.72, 28.07],[88.68, 28.07],[88.68, 28.03]],
-  site3: [[79.05, 30.72],[79.08, 30.72],[79.08, 30.75],[79.05, 30.75],[79.05, 30.72]],
-  site4: [[86.92, 27.87],[86.96, 27.87],[86.96, 27.91],[86.92, 27.91],[86.92, 27.87]],
+  site1: [[88.03, 27.72], [88.06, 27.72], [88.06, 27.75], [88.03, 27.75], [88.03, 27.72]],
+  site2: [[88.68, 28.03], [88.72, 28.03], [88.72, 28.07], [88.68, 28.07], [88.68, 28.03]],
+  site3: [[79.05, 30.72], [79.08, 30.72], [79.08, 30.75], [79.05, 30.75], [79.05, 30.72]],
+  site4: [[86.92, 27.87], [86.96, 27.87], [86.96, 27.91], [86.92, 27.91], [86.92, 27.87]],
 };
 
 const SITE_NAMES = {
@@ -18,6 +18,8 @@ const SITE_NAMES = {
 
 let selectedSite = null;
 let selectedDate = null;
+let riskResult = null;
+let testingMode = true;
 
 let isFetchingWeather = false;
 const syncingStates = {}; // track per-site button state
@@ -59,7 +61,7 @@ function selectSite(site) {
   loadDatesForSite(site);
   expandSiteCard(site);
   drawChartForSite();
-  updateThresholdStatus();
+  updateThresholdStatus("IDLE");
 }
 
 //expand site on selection
@@ -233,46 +235,46 @@ async function loadImagesForSelection() {
     metrics.lake_coverage_percent;
 
   // ========================
-// COMPUTE TOTAL AREA (FROM AOI)
-// ========================
-const totalArea = calculateAOIAreaKm2(SITES_CONFIG[selectedSite]);
+  // COMPUTE TOTAL AREA (FROM AOI)
+  // ========================
+  const totalArea = calculateAOIAreaKm2(SITES_CONFIG[selectedSite]);
 
-// ========================
-// COMPUTE CHANGE + GROWTH
-// ========================
+  // ========================
+  // COMPUTE CHANGE + GROWTH
+  // ========================
 
-// Get all dates for this site
-const dates = await window.electronAPI.getDates(selectedSite);
+  // Get all dates for this site
+  const dates = await window.electronAPI.getDates(selectedSite);
 
-// Find current index
-const index = dates.indexOf(selectedDate);
+  // Find current index
+  const index = dates.indexOf(selectedDate);
 
-// Get previous date
-const prevDate = index > 0 ? dates[index - 1] : null;
+  // Get previous date
+  const prevDate = index > 0 ? dates[index - 1] : null;
 
-let change = null;
-let changePercent = null;
-let growthRate = null;
+  let change = null;
+  let changePercent = null;
+  let growthRate = null;
 
-if (prevDate) {
-  const prevMetrics = await window.electronAPI.getMetrics(
-    selectedSite,
-    prevDate
-  );
+  if (prevDate) {
+    const prevMetrics = await window.electronAPI.getMetrics(
+      selectedSite,
+      prevDate
+    );
 
-  const prevArea =
-    prevMetrics?.metrics?.lake_area_km2 ??
-    prevMetrics?.lake_area_km2;
+    const prevArea =
+      prevMetrics?.metrics?.lake_area_km2 ??
+      prevMetrics?.lake_area_km2;
 
-  if (prevArea !== undefined && area !== undefined && prevArea !== 0) {
-    change = area - prevArea;
-    changePercent = (change / prevArea) * 100;
+    if (prevArea !== undefined && area !== undefined && prevArea !== 0) {
+      change = area - prevArea;
+      changePercent = (change / prevArea) * 100;
 
-    // Assuming 14-day interval
-    const daysBetween = 14;
-    growthRate = change / daysBetween;
+      // Assuming 14-day interval
+      const daysBetween = 14;
+      growthRate = change / daysBetween;
+    }
   }
-}
 
   // Final UI (MAIN PART)
   if (area !== undefined && coverage !== undefined) {
@@ -282,8 +284,7 @@ if (prevDate) {
 
       <p><span class="font-semibold">Date:</span> ${selectedDate}</p>
 
-      <p><span class="font-semibold">Total Area:</span> ${
-          totalArea !== undefined ? totalArea.toFixed(2) : "—"
+      <p><span class="font-semibold">Total Area:</span> ${totalArea !== undefined ? totalArea.toFixed(2) : "—"
       } km²</p>
 
       <p><span class="font-semibold">Water Area:</span> ${area.toFixed(3)} km²</p>
@@ -320,7 +321,6 @@ function handleReload(e) {
 }
 
 //sync function
-
 function handleSync(e, site) {
   e.stopPropagation();
   if (!site) {
@@ -555,91 +555,130 @@ async function drawChartForSite() {
   ctx.stroke();
 }
 
-  // =============================
-  // DARK MODE
-  // =============================
+// =============================
+// DARK MODE
+// =============================
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('dark-mode-toggle');
-    if (btn) {
-      btn.addEventListener('click', () => {
-        document.documentElement.classList.toggle('dark');
-      });
-    }
-  });
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('dark-mode-toggle');
+  if (btn) {
+    btn.addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+    });
+  }
+});
 
 //threshold
-function updateThresholdStatus() {
+function updateThresholdStatus(state) {
   const el = document.getElementById("threshold-status");
-  isDanger = calculateThreshold();
-  
-  if (isDanger) {
-    el.textContent = "DANGER";
-    el.className = `
-      w-full p-3 rounded-lg text-sm font-semibold text-center
-      bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse
-    `;
-  } else {
-    el.textContent = "SAFE";
-    el.className = `
-      w-full p-3 rounded-lg text-sm font-semibold text-center
-      bg-green-500/20 text-green-400 border border-green-500/30
-    `;
+  const alertBox = document.getElementById("alert-action-container");
+
+
+  const base = `
+    w-full p-3 rounded-lg text-sm font-semibold text-center
+  `;
+
+  if (state === "IDLE") {
+    el.textContent = "Press to assess danger";
+    el.className = base + " bg-gray-700/20 text-gray-400 border border-gray-600 cursor-pointer";
+
+  } else if (state === "LOADING") {
+    el.textContent = "Evaluating...";
+    el.className = base + " bg-gray-700/20 text-gray-400 border border-gray-600 opacity-50 pointer-events-none";
+
+  } else if (state === "HIGH") {
+    el.textContent = "HIGH RISK";
+    el.className = base + " bg-red-500/20 text-red-400 border border-red-500/30 pointer-events-none";
+    if (alertBox) alertBox.classList.remove("hidden");
+
+  } else if (state === "MEDIUM") {
+    el.textContent = "MEDIUM RISK";
+    el.className = base + " bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 pointer-events-none";
+    if (alertBox) alertBox.classList.remove("hidden");
+
+  } else if (state === "LOW") {
+    el.textContent = "LOW RISK";
+    el.className = base + " bg-green-500/20 text-green-400 border border-green-500/30 pointer-events-none";
+
+  } else if (state === "ERROR") {
+    el.textContent = "Error";
+    el.className = base + " bg-red-500/20 text-red-400 border border-red-500/30 ";
   }
 }
 
-function calculateThreshold() {
-  return false; // always SAFE for now (return true for DANGER and false for SAFE)
-}
 
-
-async function handleRisk(e, site) {
-  e.stopPropagation();
+//on-click handler for risk button
+async function handleThresholdClick(site) {
+  const el = document.getElementById("threshold-status");
 
   if (!site) return;
 
-  const statusLabel = document.getElementById("selected-site-status");
-  const btn = document.getElementById("risk-button");
+  el.classList.add("pointer-events-none", "opacity-50");
 
-  // prevent spam clicks
-  if (btn) btn.classList.add("opacity-50", "pointer-events-none");
+  updateThresholdStatus("LOADING");
 
-  if (statusLabel) statusLabel.innerText = "Evaluating risk...";
+  if(testingMode){
+    const mockResult = {
+    status: "success",
+    level: "HIGH",
+    score: 0.00
+    };
+
+    riskResult = mockResult;
+    updateThresholdStatus(mockResult.level);
+  }
+  else{
+    try {
+        const result = await window.electronAPI.evaluateRisk(site);
+        riskResult = result;
+        console.log("Risk result:", result);
+
+        if (result.status === "success") {
+          updateThresholdStatus(result.level);
+        } else {
+          updateThresholdStatus("ERROR");
+          el.classList.remove("pointer-events-none", "opacity-50");
+        }
+
+      } catch (err) {
+        console.error(err);
+        updateThresholdStatus("ERROR");
+        el.classList.remove("pointer-events-none", "opacity-50");
+      }
+  }
+
+  
+}
+
+
+//send alert
+async function handleSendAlert(site) {
+  if (!site || !riskResult) return;
+
+  const btn = document.getElementById("alert-button");
+
+  btn.classList.add("pointer-events-none", "opacity-50");
+  btn.textContent = "Sending...";
 
   try {
-    const result = await window.electronAPI.evaluateRisk(site);
+    const result = await window.electronAPI.sendAlert({
+      site,
+      risk: riskResult
+    });
+    console.log("ALERT RESULT:", result);
 
     if (result.status === "success") {
-
-      const logText = result.logs.join("");
-
-      let level = "LOW";
-
-      if (logText.includes("HIGH")) level = "HIGH";
-      else if (logText.includes("MEDIUM")) level = "MEDIUM";
-
-      // update UI with colors
-      if (statusLabel) {
-        if (level === "HIGH") {
-          statusLabel.innerText = "HIGH RISK 🔴";
-          statusLabel.style.color = "#ef4444";
-        } else if (level === "MEDIUM") {
-          statusLabel.innerText = "MEDIUM RISK 🟡";
-          statusLabel.style.color = "#facc15";
-        } else {
-          statusLabel.innerText = "LOW RISK 🟢";
-          statusLabel.style.color = "#22c55e";
-        }
-      }
-
+      btn.textContent = "Alert Sent";
+      btn.classList.remove("opacity-50");
     } else {
-      statusLabel.innerText = "Risk failed ❌";
+      btn.textContent = "Failed";
+      // btn.textContent = result.message || "Failed";
+      // btn.classList.remove("pointer-events-none", "opacity-50");
     }
 
   } catch (err) {
     console.error(err);
-    statusLabel.innerText = "Error ❌";
-  } finally {
-    if (btn) btn.classList.remove("opacity-50", "pointer-events-none");
+    btn.textContent = "Error ";
+    btn.classList.remove("pointer-events-none", "opacity-50");
   }
 }

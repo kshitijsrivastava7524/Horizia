@@ -2,7 +2,6 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
 
-  // ✅ accepts site name
   syncData: (site) => ipcRenderer.invoke('sync-data', site),
 
   onLog: (callback) => {
@@ -28,6 +27,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('get-image-path', site, date, type),
 
   getMetrics: (site, date) =>
-    ipcRenderer.invoke('get-metrics', site, date)
+    ipcRenderer.invoke('get-metrics', site, date),
+
+  sendAlert: (payload) => ipcRenderer.invoke('send-alert', payload)
 
 });

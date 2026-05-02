@@ -42,7 +42,7 @@
 <body
   class="bg-[url('images/image1.jpg')] dark:bg-[url('images/image1-dark.jpg')] bg-cover bg-center bg-no-repeat bg-fixed">
 
-  <div id="app" class="w-full h-screen px-4 py-4 flex flex-col">
+  <div id="app" class="w-full h-full px-4 py-4 flex flex-col justify-items-center items-center">
 
 
     <!-- Loading Indicator -->
@@ -56,7 +56,7 @@
     </div> -->
 
     <!-- Main Grid -->
-    <div class="grid grid-cols-12 gap-4 items-start max-w-[1600px] mx-auto w-full flex flex-col">
+    <div class="grid grid-cols-12 gap-4 max-w-[1600px] mx-auto w-full flex flex-col items-center">
       <!-- ======================== CALENDAR PANEL ======================== -->
       <!-- <div id="calendar-panel"
         class="hidden col-span-12 lg:col-span-2 min-w-[180px] bg-primary dark:bg-dark-primary rounded-2xl shadow-xl border border-secondary dark:border-dark-secondary p-4"> -->
@@ -322,25 +322,28 @@
             <!-- threshold -->
             <div id="threshold-status-container" class="mt-auto pt-6">
               <div id="threshold-status"
+                  onclick="handleThresholdClick(selectedSite)"
                   class="w-full p-3 rounded-lg text-sm font-semibold text-center
-                          bg-transparent text-transparent border border-transparent">
+                          bg-transparent text-transparent border border-transparent">      
               </div>
+            </div>
+            
+            <!-- alert button -->
+            <div id="alert-action-container" class="mt-4 hidden">
+              <button
+                id="alert-button"
+                onclick="handleSendAlert(selectedSite)"
+                class="w-full p-3 rounded-lg text-sm font-semibold text-center
+                      bg-red-600/20 text-red-400 border border-red-500/30
+                      hover:bg-red-600/30 transition">
+                Send Alert
+              </button>
             </div>
 
           </div>
           <!-- END Stats -->
 
           <!-- Map image -->
-          <!-- <div class="lg:w-3/5 flex items-center aspect-square justify-center relative p-4 h-full max-w-[600px]">
-            <div class="absolute inset-4 bg-gradient-to-br from-gray-800 to-gray-900 opacity-30 rounded-2xl"></div>
-            <img id="img-contour" class="w-full h-full object-cover rounded-xl hidden" />
-            <div id="contour-placeholder"
-                class="absolute inset-0 flex items-center justify-center text-gray-400">
-              No data selected
-            </div>
-          </div> -->
-
-
           <div class="lg:w-3/5 flex items-center justify-center relative mt-6 lg:mt-0 p-8 max-w-[600px]">
             <div class="absolute inset-4 bg-gradient-to-br from-gray-800 to-gray-900 opacity-30 rounded-2xl">
             </div>
@@ -359,13 +362,6 @@
 
     </div>
     <!-- END Main Grid -->
-     <<!-- ✅ Risk Button -->
-  <div id="risk-button"
-      class="p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex justify-center cursor-pointer hidden"
-      onclick="handleRisk(event, selectedSite)"
-      title="Evaluate Risk">
-    ⚠️
-  </div>
 
   </div>
   <!-- END app -->

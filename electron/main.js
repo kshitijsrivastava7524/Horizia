@@ -206,6 +206,8 @@ ipcMain.handle('get-metrics', (event, site, date) => {
   return null;
 });
 
+
+//evaluate risk
 ipcMain.handle('evaluate-risk', async (_, site) => {
   if (!VALID_SITES.includes(site)) {
     return { status: 'error', message: `Invalid site: ${site}` };
@@ -217,26 +219,57 @@ ipcMain.handle('evaluate-risk', async (_, site) => {
       site
     ]);
 
-    let logs = [];
-    let errors = [];
+    let stdout = "";
+    let stderr = "";
 
     py.stdout.on('data', (data) => {
-      const msg = data.toString();
-      console.log(`[RISK ${site}]: ${msg}`);
-      logs.push(msg);
+      stdout += data.toString();
     });
 
     py.stderr.on('data', (data) => {
-      const err = data.toString();
-      console.error(`[RISK ERROR ${site}]: ${err}`);
-      errors.push(err);
+      stderr += data.toString();
     });
 
+    py.on('close', () => {
+      try {
+        const result = JSON.parse(stdout.trim());
+        resolve(result);
+      } catch (err) {
+        resolve({
+          status: 'error',
+          message: stderr || 'Invalid response from backend'
+        });
+      }
+    });
+  });
+});
+
+
+ipcMain.handle('send-alert', async (_, payload) => {
+  const { site, risk } = payload;
+
+  return new Promise((resolve) => {
+    const py = spawn(PYTHON_PATH, [
+      path.join(__dirname, '../backend/send_alert.py'),
+      site,
+      risk.level
+    ]);
+
+    let stdout = "";
+    let stderr = "";
+
+    py.stdout.on('data', (d) => stdout += d.toString());
+    py.stderr.on('data', (d) => stderr += d.toString());
+
     py.on('close', (code) => {
-      if (code === 0) {
-        resolve({ status: 'success', logs });
-      } else {
-        resolve({ status: 'error', errors });
+      if (code !== 0) {
+        return resolve({ status: "error", message: stderr });
+      }
+
+      try {
+        resolve(JSON.parse(stdout.trim()));
+      } catch {
+        resolve({ status: "error", message: "Invalid response" });
       }
     });
   });
