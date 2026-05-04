@@ -43,12 +43,7 @@ def send_email(subject, message):
 
     response = requests.post(url, headers=headers, json=payload)
 
-    # print("Status:", response.status_code)
-    # if response.status_code != 202:
-    #     print("Error:", response.text)
-
-
-# ---------- Example usage ----------
+    
 if __name__ == "__main__":
     try:
         site = sys.argv[1]

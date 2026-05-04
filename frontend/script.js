@@ -11,7 +11,7 @@ const SITES_CONFIG = {
 
 const SITE_NAMES = {
   site1: "Lhonak Valley (Sikkim)",
-  site2: "Gurudongmar–Khangchung",
+  site2: "Gurudongmar-Khangchung",
   site3: "Chorabari Tal (Kedarnath)",
   site4: "Imja Tsho (Nepal)"
 };
@@ -19,7 +19,7 @@ const SITE_NAMES = {
 let selectedSite = null;
 let selectedDate = null;
 let riskResult = null;
-let testingMode = true;
+let testingMode = false;
 
 let isFetchingWeather = false;
 const syncingStates = {}; // track per-site button state
@@ -209,9 +209,10 @@ async function loadImagesForSelection() {
   // Hide contour placeholder
   document.getElementById("contour-placeholder")?.classList.add("hidden");
 
-  // ========================
-  // LOAD METRICS (FIXED)
-  // ========================
+  // ==============
+  // LOAD METRICS
+  // ==============
+  console.log("Fetching metrics for:", selectedSite, selectedDate);
   const metrics = await window.electronAPI.getMetrics(
     selectedSite,
     selectedDate
@@ -284,7 +285,7 @@ async function loadImagesForSelection() {
 
       <p><span class="font-semibold">Date:</span> ${selectedDate}</p>
 
-      <p><span class="font-semibold">Total Area:</span> ${totalArea !== undefined ? totalArea.toFixed(2) : "—"
+      <p><span class="font-semibold">Total Area:</span> ${totalArea !== undefined ? totalArea.toFixed(2) : "-"
       } km²</p>
 
       <p><span class="font-semibold">Water Area:</span> ${area.toFixed(3)} km²</p>
@@ -292,10 +293,10 @@ async function loadImagesForSelection() {
 
       
 
-      <p><span class="font-semibold">Change:</span> ${change !== undefined ? change.toFixed(3) : "—"
-      } km² (${changePercent !== null ? changePercent.toFixed(2) : "—"}%)</p>
+      <p><span class="font-semibold">Change:</span> ${change !== null ? change.toFixed(3) : "-"
+      } km² (${changePercent !== null ? changePercent.toFixed(2) : "-"}%)</p>
 
-      <p><span class="font-semibold">Growth Rate:</span> ${growthRate !== null ? growthRate.toFixed(4) : "—"} km²/day</p>
+      <p><span class="font-semibold">Growth Rate:</span> ${growthRate !== null ? growthRate.toFixed(4) : "-"} km²/day</p>
 
 
     </div>
@@ -311,9 +312,6 @@ function handleReload(e) {
 
   const app = document.body;
   hideCalendar();
-  // app.style.transition = "opacity 100ms ease, transform 300ms ease";
-  // app.style.opacity = "0";
-  // app.style.transform = "scale(0.98)";
 
   setTimeout(() => {
     location.reload();
@@ -376,7 +374,6 @@ function appendLog(logsDiv, line) {
   }
   logsDiv.scrollTop = logsDiv.scrollHeight;
 }
-
 
 
 if (window.electronAPI) {
